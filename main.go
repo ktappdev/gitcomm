@@ -88,16 +88,14 @@ func sendToLLM(prompt string) (string, error) {
 // analyzeChanges sends the git diff to the LLM for analysis and commit message generation
 func analyzeChanges(diff string) (string, error) {
 	prompt := `Analyze the following git diff and provide:
-3. A generated commit message based on the changes
+3. A generated a one line commit message based on the changes
 
 Git Diff:
 ` + diff + `
 
 Please format your response as follows:
 Generated Commit Message:
-[Your generated commit message here]
-
-	No othe comment or added text`
+[Your generated commit message here]`
 
 	return sendToLLM(prompt)
 }
@@ -165,8 +163,8 @@ func main() {
 		}
 	} else {
 		// Provide instructions for manual commit
-		fmt.Println("You can use this information to craft your commit message.")
-		fmt.Println("Remember to review and adjust the suggested message as needed.")
-		fmt.Println("To auto-commit, run getcomm with the --auto flag.")
+		// fmt.Println("You can use this information to craft your commit message.")
+		// fmt.Println("Remember to review and adjust the suggested message as needed.")
+		// fmt.Println("To auto-commit, run getcomm with the --auto flag.")
 	}
 }
