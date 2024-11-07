@@ -88,8 +88,6 @@ func sendToLLM(prompt string) (string, error) {
 // analyzeChanges sends the git diff to the LLM for analysis and commit message generation
 func analyzeChanges(diff string) (string, error) {
 	prompt := `Analyze the following git diff and provide:
-1. A classification of the changes (e.g., feature, bugfix, refactor, documentation, etc.)
-2. A suggested structure for the commit message
 3. A generated commit message based on the changes
 
 Git Diff:
@@ -97,7 +95,9 @@ Git Diff:
 
 Please format your response as follows:
 Generated Commit Message:
-[Your generated commit message here]`
+[Your generated commit message here]
+
+	No othe comment or added text`
 
 	return sendToLLM(prompt)
 }
@@ -122,7 +122,7 @@ func main() {
 
 	// Check if there are any staged changes
 	if diff == "" {
-		fmt.Println("No staged changes. Please stage your changes before running GitMind.")
+		fmt.Println("No staged changes. Please stage your changes before running gitcomm.")
 		return
 	}
 
