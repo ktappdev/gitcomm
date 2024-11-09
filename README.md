@@ -39,7 +39,7 @@ go build
 
 ## Setup
 
-1. Get a Groq API key from [Groq's website](https://console.groq.com)
+1. Get a Groq API key from [Groq's website](https://console.groq.com) IT'S FREE!!
 
 2. Set your API key as an environment variable:
 
