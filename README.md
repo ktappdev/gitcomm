@@ -11,7 +11,7 @@ A CLI tool that generates commit messages using LLMs by analyzing your git diff.
 ## Requirements
 
 1. Git installed and configured on your system
-2. OpenAI API key set in your environment as `OPENAI_API_KEY`
+2. OpenAI API key exported in your shell environment as `OPENAI_API_KEY`
 
 ## Usage
 
