@@ -60,7 +60,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	case ProviderGroq:
 		apiKey = os.Getenv(config.GroqAPIKeyEnv)
 		apiURL = config.GroqAPIURL
-		defaultModel = "llama-3.1-8b-instant"
+		defaultModel = "llama-3.1-70b-versatile"
 	case ProviderOpenAI:
 		apiKey = os.Getenv(config.OpenAIAPIKeyEnv)
 		apiURL = config.OpenAIAPIURL

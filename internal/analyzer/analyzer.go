@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	// "log/slog"
 	"strings"
 
 	"github.com/ktappdev/gitcomm/internal/llm"
@@ -9,13 +8,12 @@ import (
 
 func AnalyzeChanges(diff string) (string, error) {
 	client, err := llm.NewClient(llm.ClientConfig{
-		Provider: llm.ProviderOpenAI, // Default to Groq
-		Model:    "gpt-4o-mini",
+		Provider: llm.ProviderGroq, // Default to Groq
+		Model:    "llama-3.1-70b-versatile",
 	})
 	if err != nil {
 		return "", err
 	}
-	// slog.Info("LLM Client: ", client)
 
 	prompt := `Analyze the following git diff and provide:
 A generated a one line commit message based on the changes
@@ -27,7 +25,6 @@ Generated Commit Message:
 [Your generated commit message here]`
 
 	response, err := client.SendPrompt(prompt)
-	// slog.Info("LLM Response: ", response)
 	if err != nil {
 		return "", err
 	}
