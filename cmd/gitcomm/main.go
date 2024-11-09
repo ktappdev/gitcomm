@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/ktappdev/gitcomm/config"
 	"github.com/ktappdev/gitcomm/internal/analyzer"
 	"github.com/ktappdev/gitcomm/internal/git"
 )
