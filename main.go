@@ -106,9 +106,16 @@ func autoCommit(message string) error {
 	return cmd.Run()
 }
 
+// autoPush performs a git push to the remote repository
+func autoPush() error {
+	cmd := exec.Command("git", "push")
+	return cmd.Run()
+}
+
 func main() {
 	// Parse command-line flags
 	autoFlag := flag.Bool("auto", false, "Automatically commit with the generated message")
+	autoPushFlag := flag.Bool("ap", false, "Automatically commit and push with the generated message")
 	flag.Parse()
 
 	// Get the git diff of staged changes
@@ -148,8 +155,8 @@ func main() {
 		}
 	}
 
-	// Handle auto-commit if the flag is set
-	if *autoFlag {
+	// Handle auto-commit and auto-push if the flags are set
+	if *autoFlag || *autoPushFlag {
 		if commitMessage == "" {
 			fmt.Println("Error: Could not extract a commit message from the analysis.")
 			return
@@ -158,8 +165,18 @@ func main() {
 		err = autoCommit(commitMessage)
 		if err != nil {
 			fmt.Println("Error committing:", err)
-		} else {
-			fmt.Println("Changes committed successfully!")
+			return
+		}
+		fmt.Println("Changes committed successfully!")
+
+		if *autoPushFlag {
+			fmt.Println("Pushing changes to remote repository...")
+			err = autoPush()
+			if err != nil {
+				fmt.Println("Error pushing changes:", err)
+				return
+			}
+			fmt.Println("Changes pushed successfully!")
 		}
 	} else {
 		// Provide instructions for manual commit
