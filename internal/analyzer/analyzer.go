@@ -1,14 +1,19 @@
 package analyzer
 
 import (
-	"github.com/ktappdev/gitcomm/config"
-	"github.com/ktappdev/gitcomm/internal/openai"
-	"os"
 	"strings"
+
+	"github.com/ktappdev/gitcomm/internal/llm"
 )
 
 func AnalyzeChanges(diff string) (string, error) {
-	client := openai.NewClient(os.Getenv(config.OpenAIAPIKeyEnv))
+	client, err := llm.NewClient(llm.ClientConfig{
+		Provider: llm.ProviderGroq, // Default to Groq
+		Model:    "llama2-70b-4096",
+	})
+	if err != nil {
+		return "", err
+	}
 
 	prompt := `Analyze the following git diff and provide:
 A generated a one line commit message based on the changes
