@@ -18,6 +18,7 @@ A CLI tool that generates commit messages using LLMs by analyzing your git diff.
 ```bash
 gitcomm              # Generate commit message only
 gitcomm --auto      # Generate message and auto commit
+gitcomm --ap      # Generate message and auto commit then auto push
 ```
 
 ## Installation
