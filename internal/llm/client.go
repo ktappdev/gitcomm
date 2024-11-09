@@ -64,7 +64,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	case ProviderOpenAI:
 		apiKey = os.Getenv(config.OpenAIAPIKeyEnv)
 		apiURL = config.OpenAIAPIURL
-		defaultModel = "gpt-4"
+		defaultModel = "gpt-4o-mini"
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", cfg.Provider)
 	}
