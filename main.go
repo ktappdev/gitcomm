@@ -139,6 +139,7 @@ func main() {
 	}
 
 	// Display the analysis results
+
 	sections := strings.Split(analysis, "\n\n")
 	for _, section := range sections {
 		fmt.Println(section)
