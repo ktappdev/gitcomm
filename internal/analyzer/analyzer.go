@@ -15,21 +15,30 @@ func AnalyzeChanges(diff string) (string, error) {
 		return "", err
 	}
 
-	prompt := `Analyze the following git diff and provide:
-A generated a one line commit message based on the changes
+	prompt := `Analyze the following git diff and provide a single-line commit message based on the changes. 
+Please ensure that your response strictly follows the specified format below.
 
 Git Diff:
 ` + diff + `
-Please format your response as follows:
+
+Format your response as follows, including the exact wording:
 Generated Commit Message:
-[Your generated commit message here]`
+[Your generated commit message here]
+
+Example output:
+Generated Commit Message:
+Fix bug in user login process
+
+Make sure to provide a commit message that accurately reflects the changes made in the git diff. Thank you!`
 
 	response, err := client.SendPrompt(prompt)
 	if err != nil {
 		return "", err
 	}
 
-	return extractCommitMessage(response), nil
+	commitMessage := extractCommitMessage(response)
+
+	return commitMessage, nil
 }
 
 func extractCommitMessage(response string) string {
