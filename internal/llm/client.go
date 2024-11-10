@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -121,6 +122,7 @@ func (c *Client) SendPrompt(prompt string) (string, error) {
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", err
 	}
+	slog.Debug("Got response from LLM", "response", result)
 
 	return extractContent(result)
 }
