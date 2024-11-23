@@ -1,11 +1,11 @@
 # GitComm
 
-GitComm is a CLI tool that uses LLMs (Groq by default) to automatically generate meaningful Git commit messages by analyzing your staged changes.
+GitComm is a CLI tool that uses LLMs (Gemini by default) to automatically generate meaningful Git commit messages by analyzing your staged changes.
 
 ## Features
 
 - 🤖 Uses AI to analyze staged changes and generate commit messages
-- ⚡ Powered by Groq's fast LLMs (with OpenAI fallback support)
+- ⚡ Powered by Google's Gemini (with Groq and OpenAI fallback support)
 - 🚀 Auto-commit and push capabilities
 - 💻 Cross-platform support (Windows, macOS, Linux)
 
@@ -39,12 +39,15 @@ go build
 
 ## Setup
 
-1. Get a Groq API key from [Groq's website](https://console.groq.com) IT'S FREE!!
+1. Get a Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 2. Set your API key as an environment variable:
 
 ```bash
-# For Groq (default)
+# For Gemini (default)
+export GEMINI_API_KEY=your_gemini_api_key
+
+# For Groq (optional fallback)
 export GROQ_API_KEY=your_groq_api_key
 
 # For OpenAI (optional fallback)
@@ -94,14 +97,15 @@ gitcomm -ap
 
 GitComm uses the following defaults:
 
-- LLM Provider: Groq
-- Model: llama-3.2-1b-preview
+- LLM Provider: Gemini
+- Model: gemini-1.5-flash-8b
 - Max Tokens: 50 (approximately 2 lines of text)
 - Temperature: 0.7 (balanced between creativity and consistency)
 
 ## Environment Variables
 
-- `GROQ_API_KEY`: Your Groq API key (required by default)
+- `GEMINI_API_KEY`: Your Gemini API key (required by default)
+- `GROQ_API_KEY`: Your Groq API key (optional, for fallback)
 - `OPENAI_API_KEY`: Your OpenAI API key (optional, for fallback)
 
 ## Command Line Flags
@@ -119,7 +123,7 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Acknowledgments
 
-- [Groq](https://groq.com) for their fast LLM API
+- [Google](https://cloud.google.com/gemini) for their fast LLM API
 - The Go community for the excellent tooling
 
 ## Troubleshooting
@@ -129,10 +133,10 @@ MIT License - see [LICENSE](LICENSE) for details
 1. **No API Key Set**
 
    ```
-   Error: API key not set for provider groq
+   Error: API key not set for provider gemini
    ```
 
-   Solution: Set your GROQ_API_KEY environment variable
+   Solution: Set your GEMINI_API_KEY environment variable
 
 2. **No Staged Changes**
 

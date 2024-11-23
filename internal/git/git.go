@@ -1,7 +1,9 @@
 package git
 
 import (
+	"fmt"
 	"os/exec"
+	"strings"
 )
 
 // GetStagedChanges retrieves the staged changes in the current Git repository
@@ -11,7 +13,20 @@ func GetStagedChanges() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(output), nil
+	return limitDiffSize(string(output), 1500), nil
+}
+
+func limitDiffSize(diff string, maxLines int) string {
+	if maxLines <= 0 {
+		return diff
+	}
+
+	lines := strings.Split(diff, "\n")
+	if len(lines) <= maxLines {
+		return diff
+	}
+
+	return strings.Join(lines[:maxLines], "\n") + fmt.Sprintf("\n... (truncated, %d more lines)", len(lines)-maxLines)
 }
 
 // Commit performs a git commit with the given message
