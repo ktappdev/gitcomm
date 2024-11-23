@@ -11,7 +11,18 @@ func main() {
 	// Parse command-line flags
 	autoFlag := flag.Bool("auto", false, "Automatically commit with the generated message")
 	autoPushFlag := flag.Bool("ap", false, "Automatically commit and push with the generated message")
+	stageAllFlag := flag.Bool("sa", false, "Stage all changes before analyzing")
 	flag.Parse()
+
+	// Stage all changes if the flag is set
+	if *stageAllFlag {
+		fmt.Println("Staging all changes...")
+		if err := git.StageAll(); err != nil {
+			fmt.Println("Error staging changes:", err)
+			return
+		}
+		fmt.Println("All changes staged successfully!")
+	}
 
 	// Get the git diff of staged changes
 	diff, err := git.GetStagedChanges()

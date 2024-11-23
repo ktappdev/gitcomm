@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+// StageAll stages all changes in the current Git repository
+func StageAll() error {
+	cmd := exec.Command("git", "add", ".")
+	return cmd.Run()
+}
+
 // GetStagedChanges retrieves the staged changes in the current Git repository
 func GetStagedChanges() (string, error) {
 	cmd := exec.Command("git", "diff", "--staged")

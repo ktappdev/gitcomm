@@ -8,12 +8,13 @@ import (
 
 func AnalyzeChanges(diff string) (string, error) {
 	client, err := llm.NewClient(llm.ClientConfig{
-		Provider: llm.ProviderGroq, // Default to Groq
-		Model:    "llama-3.1-70b-versatile",
+		Provider: llm.ProviderGemini, // Use Gemini as default
+		Model:    "gemini-1.5-flash-8b",
 	})
 	if err != nil {
 		return "", err
 	}
+	defer client.Close()
 
 	prompt := `Analyze the following git diff and provide a single-line commit message based on the changes. 
 Please ensure that your response strictly follows the specified format below.

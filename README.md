@@ -86,11 +86,14 @@ gitcomm -ap
 # Basic usage - will analyze changes and suggest a commit message
 gitcomm
 
-# Auto-commit with the generated message
-gitcomm -auto
+# Stage all changes and generate a commit message
+gitcomm -sa
 
-# Auto-commit and push to remote
-gitcomm -ap
+# Stage all changes, generate message, and auto-commit
+gitcomm -sa -auto
+
+# Stage all changes, generate message, auto-commit, and push
+gitcomm -sa -ap
 ```
 
 ## Configuration
@@ -112,6 +115,7 @@ GitComm uses the following defaults:
 
 - `-auto`: Automatically commit with the generated message
 - `-ap`: Automatically commit and push to remote
+- `-sa`: Stage all changes before analyzing (equivalent to `git add .`)
 
 ## Contributing
 
