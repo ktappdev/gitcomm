@@ -3,16 +3,30 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/ktappdev/gitcomm/internal/analyzer"
+	"github.com/ktappdev/gitcomm/internal/config"
 	"github.com/ktappdev/gitcomm/internal/git"
 )
 
 func main() {
 	// Parse command-line flags
+	setupFlag := flag.Bool("setup", false, "Run interactive setup to configure API keys")
 	autoFlag := flag.Bool("auto", false, "Automatically commit with the generated message")
 	autoPushFlag := flag.Bool("ap", false, "Automatically commit and push with the generated message")
 	stageAllFlag := flag.Bool("sa", false, "Stage all changes before analyzing")
 	flag.Parse()
+
+	// Handle setup if requested
+	if *setupFlag {
+		if err := runSetup(); err != nil {
+			fmt.Println("Setup failed:", err)
+			return
+		}
+		fmt.Println("Setup completed successfully!")
+		return
+	}
 
 	// Stage all changes if the flag is set
 	if *stageAllFlag {
@@ -71,4 +85,38 @@ func main() {
 			fmt.Println("Changes pushed successfully!")
 		}
 	}
+}
+
+func runSetup() error {
+	cfg := &config.Config{}
+	
+	fmt.Println("Welcome to GitComm Setup!")
+	fmt.Println("Press Enter to skip any provider you don't want to configure.")
+	fmt.Println()
+	
+	fmt.Print("Enter Gemini API key (recommended): ")
+	fmt.Scanln(&cfg.GeminiAPIKey)
+	
+	fmt.Print("Enter Groq API key (optional fallback): ")
+	fmt.Scanln(&cfg.GroqAPIKey)
+	
+	fmt.Print("Enter OpenAI API key (optional fallback): ")
+	fmt.Scanln(&cfg.OpenAIAPIKey)
+
+	if cfg.GeminiAPIKey == "" && cfg.GroqAPIKey == "" && cfg.OpenAIAPIKey == "" {
+		return fmt.Errorf("at least one API key must be provided")
+	}
+
+	if err := config.SaveConfig(cfg); err != nil {
+		return fmt.Errorf("failed to save configuration: %v", err)
+	}
+
+	fmt.Println("\nConfiguration saved successfully!")
+	hd, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Config file location: %s/.gitcomm/config.json\n", hd)
+	
+	return nil
 }
