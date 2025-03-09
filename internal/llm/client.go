@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ktappdev/gitcomm/config"
 	"github.com/google/generative-ai-go/genai"
+	"github.com/ktappdev/gitcomm/internal/config"
 	"google.golang.org/api/option"
 )
 
@@ -21,8 +21,8 @@ const (
 	ProviderGemini Provider = "gemini"
 
 	// Default settings for commit messages
-	DefaultMaxTokens   int32   = 50    // About 2 lines of text
-	DefaultTemperature float32 = 0.7   // Slightly creative but not too random
+	DefaultMaxTokens   int32   = 50  // About 2 lines of text
+	DefaultTemperature float32 = 0.7 // Slightly creative but not too random
 )
 
 type Provider string
@@ -35,13 +35,13 @@ type ClientConfig struct {
 }
 
 type Client struct {
-	provider    Provider
-	apiKey      string
-	apiURL      string
-	model       string
-	maxTokens   int32
-	temperature float32
-	client      *http.Client
+	provider     Provider
+	apiKey       string
+	apiURL       string
+	model        string
+	maxTokens    int32
+	temperature  float32
+	client       *http.Client
 	geminiClient *genai.Client
 }
 
@@ -75,7 +75,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Gemini client: %v", err)
 		}
-		defaultModel = "gemini-1.5-flash-8b"
+		defaultModel = "gemini-2.0-flash-lite"
 	case ProviderGroq:
 		apiKey = os.Getenv(config.GroqAPIKeyEnv)
 		apiURL = config.GroqAPIURL
@@ -98,12 +98,12 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 	return &Client{
 		provider:     cfg.Provider,
-		apiKey:      apiKey,
-		apiURL:      apiURL,
-		model:       cfg.Model,
-		maxTokens:   cfg.MaxTokens,
-		temperature: cfg.Temperature,
-		client:      &http.Client{},
+		apiKey:       apiKey,
+		apiURL:       apiURL,
+		model:        cfg.Model,
+		maxTokens:    cfg.MaxTokens,
+		temperature:  cfg.Temperature,
+		client:       &http.Client{},
 		geminiClient: geminiClient,
 	}, nil
 }
@@ -136,7 +136,7 @@ func (c *Client) SendPrompt(prompt string) (string, error) {
 func (c *Client) sendGeminiPrompt(prompt string) (string, error) {
 	ctx := context.Background()
 	model := c.geminiClient.GenerativeModel(c.model)
-	
+
 	model.SetTemperature(float32(c.temperature))
 	model.SetMaxOutputTokens(int32(c.maxTokens))
 

@@ -9,7 +9,7 @@ import (
 func AnalyzeChanges(diff string) (string, error) {
 	client, err := llm.NewClient(llm.ClientConfig{
 		Provider: llm.ProviderGemini, // Use Gemini as default
-		Model:    "gemini-1.5-flash-8b",
+		Model:    "gemini-2.0-flash-lite",
 	})
 	if err != nil {
 		return "", err

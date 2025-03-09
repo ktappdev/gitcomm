@@ -39,20 +39,27 @@ go build
 
 ## Setup
 
-1. Get a Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+You have two options to configure your API keys:
 
-2. Set your API key as an environment variable:
+1. Interactive Setup (Recommended):
+   ```bash
+   gitcomm -setup
+   ```
+   This will guide you through setting up your API keys.
 
-```bash
-# For Gemini (default)
-export GEMINI_API_KEY=your_gemini_api_key
+2. Environment Variables:
+   ```bash
+   # For Gemini (default)
+   export GEMINI_API_KEY=your_gemini_api_key
+   
+   # For Groq (optional fallback)
+   export GROQ_API_KEY=your_groq_api_key
+   
+   # For OpenAI (optional fallback)
+   export OPENAI_API_KEY=your_openai_api_key
+   ```
 
-# For Groq (optional fallback)
-export GROQ_API_KEY=your_groq_api_key
-
-# For OpenAI (optional fallback)
-export OPENAI_API_KEY=your_openai_api_key
-```
+API keys are stored securely in `~/.gitcomm/config.json`. Environment variables will override stored configuration.
 
 ## Usage
 
