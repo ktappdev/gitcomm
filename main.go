@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	fmt.Println("updated")
 	// Parse command-line flags
 	setupFlag := flag.Bool("setup", false, "Run interactive setup to configure API keys")
 	autoFlag := flag.Bool("auto", false, "Automatically commit with the generated message")
@@ -89,17 +90,17 @@ func main() {
 
 func runSetup() error {
 	cfg := &config.Config{}
-	
+
 	fmt.Println("Welcome to GitComm Setup!")
 	fmt.Println("Press Enter to skip any provider you don't want to configure.")
 	fmt.Println()
-	
+
 	fmt.Print("Enter Gemini API key (recommended): ")
 	fmt.Scanln(&cfg.GeminiAPIKey)
-	
+
 	fmt.Print("Enter Groq API key (optional fallback): ")
 	fmt.Scanln(&cfg.GroqAPIKey)
-	
+
 	fmt.Print("Enter OpenAI API key (optional fallback): ")
 	fmt.Scanln(&cfg.OpenAIAPIKey)
 
@@ -117,6 +118,6 @@ func runSetup() error {
 		return err
 	}
 	fmt.Printf("Config file location: %s/.gitcomm/config.json\n", hd)
-	
+
 	return nil
 }
