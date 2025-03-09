@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-	fmt.Println("updated")
 	// Parse command-line flags
 	setupFlag := flag.Bool("setup", false, "Run interactive setup to configure API keys")
 	autoFlag := flag.Bool("auto", false, "Automatically commit with the generated message")
