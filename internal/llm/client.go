@@ -8,7 +8,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/google/generative-ai-go/genai"
 	"github.com/ktappdev/gitcomm/internal/config"
@@ -58,6 +57,14 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		cfg.Temperature = DefaultTemperature
 	}
 
+	appConfig, err := config.LoadConfig()
+	if err != nil {
+		// Log the error but proceed, allowing env vars to still function if file is missing/corrupt
+		slog.Warn("Failed to load .gitcomm/config.json", "error", err)
+		// Initialize an empty config so that subsequent checks don't nil pointer
+		appConfig = &config.Config{}
+	}
+
 	var apiKey string
 	var apiURL string
 	var defaultModel string
@@ -65,31 +72,38 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 	switch cfg.Provider {
 	case ProviderGemini:
-		apiKey = os.Getenv(config.GeminiAPIKeyEnv)
+		apiKey = appConfig.GeminiAPIKey // Get from loaded config (JSON or ENV)
 		if apiKey == "" {
-			return nil, fmt.Errorf("API key not set for provider %s", cfg.Provider)
+			return nil, fmt.Errorf("Gemini API key not set in config file or %s environment variable", config.GeminiAPIKeyEnv)
 		}
 		ctx := context.Background()
-		var err error
+		// var err error // err already declared by appConfig loading
 		geminiClient, err = genai.NewClient(ctx, option.WithAPIKey(apiKey))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Gemini client: %v", err)
 		}
-		defaultModel = "gemini-2.0-flash-lite"
+		defaultModel = "gemini-2.0-flash-lite" // Ensure this is a valid and available model
 	case ProviderGroq:
-		apiKey = os.Getenv(config.GroqAPIKeyEnv)
+		apiKey = appConfig.GroqAPIKey // Get from loaded config (JSON or ENV)
 		apiURL = config.GroqAPIURL
-		defaultModel = "llama-3.1-70b-versatile"
+		defaultModel = "llama-3.1-70b-versatile" // Ensure this is valid for Groq
 	case ProviderOpenAI:
-		apiKey = os.Getenv(config.OpenAIAPIKeyEnv)
+		apiKey = appConfig.OpenAIAPIKey // Get from loaded config (JSON or ENV)
 		apiURL = config.OpenAIAPIURL
-		defaultModel = "gpt-4o-mini"
+		defaultModel = "gpt-4o-mini" // Ensure this is valid for OpenAI
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", cfg.Provider)
 	}
 
 	if cfg.Provider != ProviderGemini && apiKey == "" {
-		return nil, fmt.Errorf("API key not set for provider %s", cfg.Provider)
+		var envVarName string
+		switch cfg.Provider {
+		case ProviderGroq:
+			envVarName = config.GroqAPIKeyEnv
+		case ProviderOpenAI:
+			envVarName = config.OpenAIAPIKeyEnv
+		}
+		return nil, fmt.Errorf("API key for %s not set in config file or %s environment variable", cfg.Provider, envVarName)
 	}
 
 	if cfg.Model == "" {
