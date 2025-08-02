@@ -57,6 +57,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		cfg.Temperature = DefaultTemperature
 	}
 
+	slog.Info("llm: loading config for provider", "provider", cfg.Provider)
 	appConfig, err := config.LoadConfig()
 	if err != nil {
 		// Log the error but proceed, allowing env vars to still function if file is missing/corrupt
@@ -72,6 +73,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 	switch cfg.Provider {
 	case ProviderGemini:
+		slog.Info("llm: initializing Gemini client")
 		apiKey = appConfig.GeminiAPIKey // Get from loaded config (JSON or ENV)
 		if apiKey == "" {
 			return nil, fmt.Errorf("Gemini API key not set in config file or %s environment variable", config.GeminiAPIKeyEnv)
@@ -82,12 +84,14 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Gemini client: %v", err)
 		}
-		defaultModel = "gemini-2.0-flash-lite" // Ensure this is a valid and available model
+		defaultModel = "gemini-2.5-flash-lite" // Ensure this is a valid and available model
 	case ProviderGroq:
+		slog.Info("llm: initializing Groq client")
 		apiKey = appConfig.GroqAPIKey // Get from loaded config (JSON or ENV)
 		apiURL = config.GroqAPIURL
 		defaultModel = "llama-3.1-70b-versatile" // Ensure this is valid for Groq
 	case ProviderOpenAI:
+		slog.Info("llm: initializing OpenAI client")
 		apiKey = appConfig.OpenAIAPIKey // Get from loaded config (JSON or ENV)
 		apiURL = config.OpenAIAPIURL
 		defaultModel = "gpt-4o-mini" // Ensure this is valid for OpenAI
@@ -110,6 +114,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		cfg.Model = defaultModel
 	}
 
+	slog.Info("llm: client initialized", "provider", cfg.Provider, "model", cfg.Model, "maxtokens", cfg.MaxTokens, "temp", cfg.Temperature)
 	return &Client{
 		provider:     cfg.Provider,
 		apiKey:       apiKey,
@@ -123,6 +128,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 }
 
 func (c *Client) Close() error {
+	slog.Info("llm: closing client", "provider", c.provider)
 	if c.geminiClient != nil {
 		c.geminiClient.Close()
 	}
@@ -130,6 +136,7 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) SendPrompt(prompt string) (string, error) {
+	slog.Info("llm: SendPrompt", "provider", c.provider, "model", c.model, "prompt_bytes", len(prompt))
 	if c.provider == ProviderGemini {
 		return c.sendGeminiPrompt(prompt)
 	}
@@ -148,6 +155,7 @@ func (c *Client) SendPrompt(prompt string) (string, error) {
 }
 
 func (c *Client) sendGeminiPrompt(prompt string) (string, error) {
+	slog.Info("llm: gemini GenerateContent start")
 	ctx := context.Background()
 	model := c.geminiClient.GenerativeModel(c.model)
 
@@ -170,7 +178,9 @@ func (c *Client) sendGeminiPrompt(prompt string) (string, error) {
 
 	// Extract text from the response part
 	if textPart, ok := candidate.Content.Parts[0].(genai.Text); ok {
-		return string(textPart), nil
+		s := string(textPart)
+		slog.Info("llm: gemini response", "bytes", len(s))
+		return s, nil
 	}
 
 	// If we can't get a text part, return an error
@@ -178,6 +188,7 @@ func (c *Client) sendGeminiPrompt(prompt string) (string, error) {
 }
 
 func (c *Client) sendOpenAIStylePrompt(prompt string) (string, error) {
+	slog.Info("llm: http POST", "url", c.apiURL)
 	requestBody, _ := json.Marshal(map[string]interface{}{
 		"model": c.model,
 		"messages": []map[string]string{
@@ -210,7 +221,7 @@ func (c *Client) sendOpenAIStylePrompt(prompt string) (string, error) {
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", fmt.Errorf("failed to parse JSON response: %v", err)
 	}
-	slog.Debug("Got response from LLM", "response", result)
+	slog.Info("llm: http response received", "status", resp.StatusCode)
 
 	return extractContent(result)
 }

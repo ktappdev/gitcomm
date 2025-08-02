@@ -6,20 +6,27 @@ import (
 	"strings"
 )
 
-// StageAll stages all changes in the current Git repository
 func StageAll() error {
+	fmt.Println("[debug] git: running 'git add .'")
 	cmd := exec.Command("git", "add", ".")
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("[debug] git: add error:", err)
+	}
+	return err
 }
 
-// GetStagedChanges retrieves the staged changes in the current Git repository
 func GetStagedChanges() (string, error) {
+	fmt.Println("[debug] git: running 'git diff --staged'")
 	cmd := exec.Command("git", "diff", "--staged")
 	output, err := cmd.Output()
 	if err != nil {
+		fmt.Println("[debug] git: diff error:", err)
 		return "", err
 	}
-	return limitDiffSize(string(output), 1500), nil
+	res := limitDiffSize(string(output), 1500)
+	fmt.Println("[debug] git: staged diff bytes", len(res))
+	return res, nil
 }
 
 func limitDiffSize(diff string, maxLines int) string {
@@ -35,14 +42,22 @@ func limitDiffSize(diff string, maxLines int) string {
 	return strings.Join(lines[:maxLines], "\n") + fmt.Sprintf("\n... (truncated, %d more lines)", len(lines)-maxLines)
 }
 
-// Commit performs a git commit with the given message
 func Commit(message string) error {
+	fmt.Println("[debug] git: running 'git commit -m <message>' len", len(message))
 	cmd := exec.Command("git", "commit", "-m", message)
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("[debug] git: commit error:", err)
+	}
+	return err
 }
 
-// Push performs a git push to the remote repository
 func Push() error {
+	fmt.Println("[debug] git: running 'git push'")
 	cmd := exec.Command("git", "push")
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("[debug] git: push error:", err)
+	}
+	return err
 }

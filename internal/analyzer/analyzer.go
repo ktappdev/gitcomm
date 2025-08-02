@@ -1,20 +1,23 @@
 package analyzer
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ktappdev/gitcomm/internal/llm"
 )
 
 func AnalyzeChanges(diff string) (string, error) {
+	fmt.Println("[debug] analyzer: create llm client")
 	client, err := llm.NewClient(llm.ClientConfig{
-		Provider: llm.ProviderGemini, // Use Gemini as default
-		Model:    "gemini-2.0-flash-lite",
+		Provider: llm.ProviderGemini,
+		Model:    "gemini-2.5-flash",
 	})
 	if err != nil {
+		fmt.Println("[debug] analyzer: NewClient error:", err)
 		return "", err
 	}
-	defer client.Close()
+	defer func() { fmt.Println("[debug] analyzer: closing llm client"); client.Close() }()
 
 	prompt := `Analyze the following git diff and provide a single-line commit message based on the changes. 
 Please ensure that your response strictly follows the specified format below.
@@ -32,12 +35,16 @@ Fix bug in user login process
 
 Make sure to provide a commit message that accurately reflects the changes made in the git diff. Thank you!`
 
+	fmt.Println("[debug] analyzer: sending prompt to llm (bytes)", len(prompt))
 	response, err := client.SendPrompt(prompt)
 	if err != nil {
+		fmt.Println("[debug] analyzer: SendPrompt error:", err)
 		return "", err
 	}
+	fmt.Println("[debug] analyzer: got response (bytes)", len(response))
 
 	commitMessage := extractCommitMessage(response)
+	fmt.Println("[debug] analyzer: extracted commit message length", len(commitMessage))
 
 	return commitMessage, nil
 }
