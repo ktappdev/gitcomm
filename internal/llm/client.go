@@ -84,7 +84,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Gemini client: %v", err)
 		}
-		defaultModel = "gemini-2.5-flash-lite" // Ensure this is a valid and available model
+		defaultModel = "gemini-1.5-flash" // Ensure this is a valid and available model
 	case ProviderGroq:
 		slog.Info("llm: initializing Groq client")
 		apiKey = appConfig.GroqAPIKey // Get from loaded config (JSON or ENV)

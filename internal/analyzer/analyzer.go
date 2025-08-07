@@ -11,7 +11,7 @@ func AnalyzeChanges(diff string) (string, error) {
 	fmt.Println("[debug] analyzer: create llm client")
 	client, err := llm.NewClient(llm.ClientConfig{
 		Provider: llm.ProviderGemini,
-		Model:    "gemini-2.5-flash",
+		Model:    "gemini-1.5-flash",
 	})
 	if err != nil {
 		fmt.Println("[debug] analyzer: NewClient error:", err)
