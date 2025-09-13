@@ -55,9 +55,6 @@ better user management and audit trails.`
 		return "", err
 	}
 
-	// Debug: show raw response
-	fmt.Printf("\n[DEBUG] Raw LLM Response:\n%s\n[END DEBUG]\n\n", response)
-
 	commitMessage := extractCommitMessage(response)
 
 	return commitMessage, nil

@@ -147,10 +147,6 @@ func (c *Client) tryModel(model, prompt string) (string, error) {
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// Debug: show raw API response
-	fmt.Printf("\n[DEBUG] API Response Status: %d\n", resp.StatusCode)
-	fmt.Printf("[DEBUG] API Response Body: %s\n[END API DEBUG]\n\n", string(body))
-
 	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", fmt.Errorf("failed to unmarshal response: %w", err)
