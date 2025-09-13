@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -41,11 +40,9 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		cfg.Temperature = DefaultTemperature
 	}
 
-	slog.Info("llm: loading OpenRouter config")
 	appConfig, err := config.LoadConfig()
 	if err != nil {
 		// Log the error but proceed, allowing env vars to still function if file is missing/corrupt
-		slog.Warn("Failed to load .gitcomm/config.json", "error", err)
 		// Initialize an empty config so that subsequent checks don't nil pointer
 		appConfig = &config.Config{}
 	}
@@ -62,7 +59,6 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		"openai/gpt-oss-20b",           // Fallback 2: Reliable final option
 	}
 
-	slog.Info("llm: OpenRouter client initialized", "models", models, "maxtokens", cfg.MaxTokens, "temp", cfg.Temperature)
 	return &Client{
 		apiKey:      apiKey,
 		apiURL:      config.OpenRouterAPIURL,
@@ -76,7 +72,6 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 }
 
 func (c *Client) Close() error {
-	slog.Info("llm: closing OpenRouter client")
 	return nil
 }
 
@@ -129,6 +124,7 @@ func (c *Client) tryModel(model, prompt string) (string, error) {
 	}
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Title", "GitComm")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
