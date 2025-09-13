@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ktappdev/gitcomm/internal/config"
@@ -54,9 +55,9 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 	// Models to try in order (primary first, then fallbacks)
 	models := []string{
-		"openai/gpt-oss-20b",           // Primary: Reliable and high quality
-		"meta-llama/llama-4-scout",      // Fallback 1: Strong performance
-		"google/gemini-2.5-flash-lite",  // Fallback 2: Fast and capable
+		"meta-llama/llama-3.3-8b-instruct:free", // Primary: Free and capable
+		"meta-llama/llama-4-scout",             // Fallback 1: Strong performance
+		"google/gemini-2.5-flash-lite",         // Fallback 2: Fast and capable
 	}
 
 	return &Client{
@@ -95,7 +96,11 @@ func (c *Client) SendPrompt(prompt string) (string, error) {
 		
 		// Only show error if this isn't the last model
 		if i < len(c.models)-1 {
-			fmt.Printf("⚠️  %s failed, trying next model...\n", getModelDisplayName(model))
+			if strings.Contains(lastErr.Error(), "empty response") {
+				fmt.Printf("⚠️  %s returned empty response, trying next model...\n", getModelDisplayName(model))
+			} else {
+				fmt.Printf("⚠️  %s failed, trying next model...\n", getModelDisplayName(model))
+			}
 		}
 	}
 	
@@ -142,6 +147,10 @@ func (c *Client) tryModel(model, prompt string) (string, error) {
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	// Debug: show raw API response
+	fmt.Printf("\n[DEBUG] API Response Status: %d\n", resp.StatusCode)
+	fmt.Printf("[DEBUG] API Response Body: %s\n[END API DEBUG]\n\n", string(body))
+
 	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", fmt.Errorf("failed to unmarshal response: %w", err)
@@ -167,11 +176,19 @@ func (c *Client) tryModel(model, prompt string) (string, error) {
 		return "", fmt.Errorf("unexpected response format: content is not a string")
 	}
 
+	// Check if content is empty or just whitespace
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return "", fmt.Errorf("model returned empty response")
+	}
+
 	return content, nil
 }
 
 func getModelDisplayName(model string) string {
 	switch model {
+	case "meta-llama/llama-3.3-8b-instruct:free":
+		return "Llama 3.3 8B Instruct (Free)"
 	case "google/gemini-2.5-flash-lite":
 		return "Gemini 2.5 Flash Lite"
 	case "meta-llama/llama-4-scout":

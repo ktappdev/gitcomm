@@ -6,7 +6,7 @@ GitComm is a CLI tool that uses LLMs to automatically generate meaningful Git co
 
 - 🤖 Uses AI to analyze staged changes and generate commit messages
 - ⚡ Powered by OpenRouter with multiple model fallback support
-- 🔄 Automatic model fallback: GPT OSS → Llama → Gemini
+- 🔄 Automatic model fallback: Llama 3.3 → Llama 4 → Gemini
 - 🚀 Auto-commit and push capabilities
 - 💻 Cross-platform support (Windows, macOS, Linux)
 
@@ -110,7 +110,7 @@ GitComm uses the following defaults:
 
 - LLM Provider: OpenRouter
 - Models (with fallback):
-  1. `openai/gpt-oss-20b` (Primary)
+  1. `meta-llama/llama-3.3-8b-instruct:free` (Primary)
   2. `meta-llama/llama-4-scout` (Fallback 1)
   3. `google/gemini-2.5-flash-lite` (Fallback 2)
 - Max Tokens: 400 (allows for proper Git commit format with subject + body)
@@ -123,8 +123,8 @@ GitComm uses the following defaults:
 
 GitComm automatically tries multiple models if one fails:
 
-1. **Primary Model**: `openai/gpt-oss-20b` - Reliable and high quality for most commit messages
-2. **Fallback 1**: `meta-llama/llama-4-scout` - Strong performance if GPT OSS is unavailable  
+1. **Primary Model**: `meta-llama/llama-3.3-8b-instruct:free` - Free and capable for most commit messages
+2. **Fallback 1**: `meta-llama/llama-4-scout` - Strong performance if Llama 3.3 is unavailable  
 3. **Fallback 2**: `google/gemini-2.5-flash-lite` - Fast and capable final option
 
 Commit messages follow proper Git format with a concise subject line and detailed body explaining the changes. If all models fail, you'll see an error message.
@@ -135,7 +135,7 @@ Commit messages follow proper Git format with a concise subject line and detaile
 ```
 📄 Analyzed 45 lines of diff
 🤖 Generating commit message...
-⚡ Using GPT OSS 20B
+⚡ Using Llama 3.3 8B Instruct (Free)
 
 📝 Generated Commit Message:
 ┌──────────────────────────────────────────────────
@@ -154,8 +154,8 @@ better user management and audit trails.
 ```
 📄 Analyzed 127 lines of diff (truncated from 890 lines)
 🤖 Generating commit message...
-⚡ Using GPT OSS 20B
-⚠️  GPT OSS 20B failed, trying next model...
+⚡ Using Llama 3.3 8B Instruct (Free)
+⚠️  Llama 3.3 8B Instruct (Free) failed, trying next model...
 🔄 Falling back to Llama 4 Scout
 
 📝 Generated Commit Message:
@@ -173,7 +173,7 @@ Improves performance and reduces memory usage under high load.
 ✅ All changes staged successfully!
 📄 Analyzed 23 lines of diff
 🤖 Generating commit message...
-⚡ Using GPT OSS 20B
+⚡ Using Llama 3.3 8B Instruct (Free)
 
 📝 Generated Commit Message:
 ┌──────────────────────────────────────────────────

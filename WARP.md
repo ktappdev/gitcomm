@@ -77,7 +77,7 @@ go test ./internal/analyzer -run TestName -v
 
 **Provider**: OpenRouter (https://openrouter.ai)
 **Model Fallback Chain**:
-1. `openai/gpt-oss-20b` (Primary: Reliable and high quality)
+1. `meta-llama/llama-3.3-8b-instruct:free` (Primary: Free and capable)
 2. `meta-llama/llama-4-scout` (Fallback 1: Strong performance)  
 3. `google/gemini-2.5-flash-lite` (Fallback 2: Fast and capable)
 
