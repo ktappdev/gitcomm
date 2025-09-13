@@ -7,17 +7,12 @@ import (
 )
 
 const (
-    GeminiAPIKeyEnv = "GEMINI_API_KEY"
-    GroqAPIKeyEnv   = "GROQ_API_KEY"
-    OpenAIAPIKeyEnv = "OPENAI_API_KEY"
-    OpenAIAPIURL    = "https://api.openai.com/v1/chat/completions"
-    GroqAPIURL      = "https://api.groq.com/openai/v1/chat/completions"
+    OpenRouterAPIKeyEnv = "OPEN_ROUTER_API_KEY"
+    OpenRouterAPIURL    = "https://openrouter.ai/api/v1/chat/completions"
 )
 
 type Config struct {
-    GeminiAPIKey string `json:"gemini_api_key"`
-    GroqAPIKey   string `json:"groq_api_key"`
-    OpenAIAPIKey string `json:"openai_api_key"`
+    OpenRouterAPIKey string `json:"open_router_api_key"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -39,14 +34,8 @@ func LoadConfig() (*Config, error) {
     }
 
     // Environment variables override config file
-    if envKey := os.Getenv(GeminiAPIKeyEnv); envKey != "" {
-        config.GeminiAPIKey = envKey
-    }
-    if envKey := os.Getenv(GroqAPIKeyEnv); envKey != "" {
-        config.GroqAPIKey = envKey
-    }
-    if envKey := os.Getenv(OpenAIAPIKeyEnv); envKey != "" {
-        config.OpenAIAPIKey = envKey
+    if envKey := os.Getenv(OpenRouterAPIKeyEnv); envKey != "" {
+        config.OpenRouterAPIKey = envKey
     }
 
     return config, nil

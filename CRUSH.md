@@ -21,7 +21,7 @@ Project conventions (Go)
 - Logging: use log/slog where structured logs are needed (already used in internal/llm).
 - Naming: exported identifiers use CamelCase; unexported lowerCamel; package names short and lower case.
 - Config: API keys via env (GEMINI_API_KEY, GROQ_API_KEY, OPENAI_API_KEY) or ~/.gitcomm/config.json; env overrides file.
-- LLM: default provider Gemini; models set in internal/llm; keep tokens small for single-line commit messages.
+- LLM: default provider OpenRouter; models set in internal/llm; 400 tokens for proper Git format (subject + body).
 - Git ops: internal/git shells out to git; avoid interactive prompts in library code.
 - CLI flags: -setup, -auto, -ap, -sa; keep backwards-compatible.
 

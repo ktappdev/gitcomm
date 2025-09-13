@@ -1,9 +1,6 @@
 package config
 
 const (
-	OpenAIAPIKeyEnv = "OPENAI_API_KEY"
-	GroqAPIKeyEnv   = "GROQ_API_KEY"
-	GeminiAPIKeyEnv = "GEMINI_API_KEY"
-	OpenAIAPIURL    = "https://api.openai.com/v1/chat/completions"
-	GroqAPIURL      = "https://api.groq.com/openai/v1/chat/completions"
+	OpenRouterAPIKeyEnv = "OPEN_ROUTER_API_KEY"
+	OpenRouterAPIURL    = "https://openrouter.ai/api/v1/chat/completions"
 )

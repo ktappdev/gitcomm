@@ -2,53 +2,37 @@ package llm
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/ktappdev/gitcomm/internal/config"
-	"google.golang.org/api/option"
 )
 
 const (
-	ProviderGroq   Provider = "groq"
-	ProviderOpenAI Provider = "openai"
-	ProviderGemini Provider = "gemini"
-
 	// Default settings for commit messages
-	DefaultMaxTokens   int32   = 50  // About 2 lines of text
+	DefaultMaxTokens   int32   = 400 // Allow for detailed commit messages
 	DefaultTemperature float32 = 0.7 // Slightly creative but not too random
 )
 
-type Provider string
-
 type ClientConfig struct {
-	Provider    Provider
-	Model       string
 	MaxTokens   int32
 	Temperature float32
 }
 
 type Client struct {
-	provider     Provider
-	apiKey       string
-	apiURL       string
-	model        string
-	maxTokens    int32
-	temperature  float32
-	client       *http.Client
-	geminiClient *genai.Client
+	apiKey      string
+	apiURL      string
+	maxTokens   int32
+	temperature float32
+	client      *http.Client
+	models      []string
 }
 
 func NewClient(cfg ClientConfig) (*Client, error) {
-	if cfg.Provider == "" {
-		cfg.Provider = ProviderGemini // Change default to Gemini
-	}
-
 	if cfg.MaxTokens == 0 {
 		cfg.MaxTokens = DefaultMaxTokens
 	}
@@ -57,7 +41,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		cfg.Temperature = DefaultTemperature
 	}
 
-	slog.Info("llm: loading config for provider", "provider", cfg.Provider)
+	slog.Info("llm: loading OpenRouter config")
 	appConfig, err := config.LoadConfig()
 	if err != nil {
 		// Log the error but proceed, allowing env vars to still function if file is missing/corrupt
@@ -66,131 +50,66 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		appConfig = &config.Config{}
 	}
 
-	var apiKey string
-	var apiURL string
-	var defaultModel string
-	var geminiClient *genai.Client
-
-	switch cfg.Provider {
-	case ProviderGemini:
-		slog.Info("llm: initializing Gemini client")
-		apiKey = appConfig.GeminiAPIKey // Get from loaded config (JSON or ENV)
-		if apiKey == "" {
-			return nil, fmt.Errorf("Gemini API key not set in config file or %s environment variable", config.GeminiAPIKeyEnv)
-		}
-		ctx := context.Background()
-		// var err error // err already declared by appConfig loading
-		geminiClient, err = genai.NewClient(ctx, option.WithAPIKey(apiKey))
-		if err != nil {
-			return nil, fmt.Errorf("failed to create Gemini client: %v", err)
-		}
-		defaultModel = "gemini-1.5-flash" // Ensure this is a valid and available model
-	case ProviderGroq:
-		slog.Info("llm: initializing Groq client")
-		apiKey = appConfig.GroqAPIKey // Get from loaded config (JSON or ENV)
-		apiURL = config.GroqAPIURL
-		defaultModel = "llama-3.1-70b-versatile" // Ensure this is valid for Groq
-	case ProviderOpenAI:
-		slog.Info("llm: initializing OpenAI client")
-		apiKey = appConfig.OpenAIAPIKey // Get from loaded config (JSON or ENV)
-		apiURL = config.OpenAIAPIURL
-		defaultModel = "gpt-4o-mini" // Ensure this is valid for OpenAI
-	default:
-		return nil, fmt.Errorf("unsupported provider: %s", cfg.Provider)
+	apiKey := appConfig.OpenRouterAPIKey
+	if apiKey == "" {
+		return nil, fmt.Errorf("OpenRouter API key not set in config file or %s environment variable", config.OpenRouterAPIKeyEnv)
 	}
 
-	if cfg.Provider != ProviderGemini && apiKey == "" {
-		var envVarName string
-		switch cfg.Provider {
-		case ProviderGroq:
-			envVarName = config.GroqAPIKeyEnv
-		case ProviderOpenAI:
-			envVarName = config.OpenAIAPIKeyEnv
-		}
-		return nil, fmt.Errorf("API key for %s not set in config file or %s environment variable", cfg.Provider, envVarName)
+	// Models to try in order (primary first, then fallbacks)
+	models := []string{
+		"google/gemini-2.5-flash-lite",  // Primary: Fast and capable
+		"meta-llama/llama-4-scout",      // Fallback 1: Strong performance
+		"openai/gpt-oss-20b",           // Fallback 2: Reliable final option
 	}
 
-	if cfg.Model == "" {
-		cfg.Model = defaultModel
-	}
-
-	slog.Info("llm: client initialized", "provider", cfg.Provider, "model", cfg.Model, "maxtokens", cfg.MaxTokens, "temp", cfg.Temperature)
+	slog.Info("llm: OpenRouter client initialized", "models", models, "maxtokens", cfg.MaxTokens, "temp", cfg.Temperature)
 	return &Client{
-		provider:     cfg.Provider,
-		apiKey:       apiKey,
-		apiURL:       apiURL,
-		model:        cfg.Model,
-		maxTokens:    cfg.MaxTokens,
-		temperature:  cfg.Temperature,
-		client:       &http.Client{},
-		geminiClient: geminiClient,
+		apiKey:      apiKey,
+		apiURL:      config.OpenRouterAPIURL,
+		maxTokens:   cfg.MaxTokens,
+		temperature: cfg.Temperature,
+		client: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+		models: models,
 	}, nil
 }
 
 func (c *Client) Close() error {
-	slog.Info("llm: closing client", "provider", c.provider)
-	if c.geminiClient != nil {
-		c.geminiClient.Close()
-	}
+	slog.Info("llm: closing OpenRouter client")
 	return nil
 }
 
 func (c *Client) SendPrompt(prompt string) (string, error) {
-	slog.Info("llm: SendPrompt", "provider", c.provider, "model", c.model, "prompt_bytes", len(prompt))
-	if c.provider == ProviderGemini {
-		return c.sendGeminiPrompt(prompt)
-	}
-
-	// For OpenAI-style APIs (Groq and OpenAI)
-	response, err := c.sendOpenAIStylePrompt(prompt)
-	if err != nil {
-		// Try falling back to Gemini if available and the current provider fails
-		if c.geminiClient != nil {
-			slog.Info("Falling back to Gemini due to error with primary provider", "error", err)
-			return c.sendGeminiPrompt(prompt)
+	var lastErr error
+	
+	for i, model := range c.models {
+		// Show which model we're trying
+		if i == 0 {
+			fmt.Printf("⚡ Using %s\n", getModelDisplayName(model))
+		} else {
+			fmt.Printf("🔄 Falling back to %s\n", getModelDisplayName(model))
 		}
-		return "", err
+		
+		response, err := c.tryModel(model, prompt)
+		if err == nil {
+			return response, nil
+		}
+		
+		lastErr = err
+		
+		// Only show error if this isn't the last model
+		if i < len(c.models)-1 {
+			fmt.Printf("⚠️  %s failed, trying next model...\n", getModelDisplayName(model))
+		}
 	}
-	return response, nil
+	
+	return "", fmt.Errorf("all models failed, last error: %w", lastErr)
 }
 
-func (c *Client) sendGeminiPrompt(prompt string) (string, error) {
-	slog.Info("llm: gemini GenerateContent start")
-	ctx := context.Background()
-	model := c.geminiClient.GenerativeModel(c.model)
-
-	model.SetTemperature(float32(c.temperature))
-	model.SetMaxOutputTokens(int32(c.maxTokens))
-
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
-	if err != nil {
-		return "", fmt.Errorf("error generating content: %v", err)
-	}
-
-	if len(resp.Candidates) == 0 {
-		return "", fmt.Errorf("no content generated")
-	}
-
-	candidate := resp.Candidates[0]
-	if candidate.Content == nil || len(candidate.Content.Parts) == 0 {
-		return "", fmt.Errorf("no content in response")
-	}
-
-	// Extract text from the response part
-	if textPart, ok := candidate.Content.Parts[0].(genai.Text); ok {
-		s := string(textPart)
-		slog.Info("llm: gemini response", "bytes", len(s))
-		return s, nil
-	}
-
-	// If we can't get a text part, return an error
-	return "", fmt.Errorf("unexpected response type: %T", candidate.Content.Parts[0])
-}
-
-func (c *Client) sendOpenAIStylePrompt(prompt string) (string, error) {
-	slog.Info("llm: http POST", "url", c.apiURL)
-	requestBody, _ := json.Marshal(map[string]interface{}{
-		"model": c.model,
+func (c *Client) tryModel(model, prompt string) (string, error) {
+	requestBody, err := json.Marshal(map[string]interface{}{
+		"model": model,
 		"messages": []map[string]string{
 			{
 				"role":    "user",
@@ -199,37 +118,42 @@ func (c *Client) sendOpenAIStylePrompt(prompt string) (string, error) {
 		},
 		"max_tokens":  c.maxTokens,
 		"temperature": c.temperature,
-		"stream":      false,
 	})
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request body: %w", err)
+	}
 
-	req, _ := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(requestBody))
-	req.Header.Set("Content-Type", "application/json")
+	req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
+	}
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("HTTP request failed: %v", err)
+		return "", fmt.Errorf("failed to make HTTP request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("API request failed with status: %d, response: %s", resp.StatusCode, string(body))
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response: %v", err)
+		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
-		return "", fmt.Errorf("failed to parse JSON response: %v", err)
+		return "", fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-	slog.Info("llm: http response received", "status", resp.StatusCode)
 
-	return extractContent(result)
-}
-
-func extractContent(result map[string]interface{}) (string, error) {
 	choices, ok := result["choices"].([]interface{})
 	if !ok || len(choices) == 0 {
-		return "", fmt.Errorf("unexpected response format: no choices array")
+		return "", fmt.Errorf("no choices returned from API")
 	}
 
 	firstChoice, ok := choices[0].(map[string]interface{})
@@ -248,4 +172,17 @@ func extractContent(result map[string]interface{}) (string, error) {
 	}
 
 	return content, nil
+}
+
+func getModelDisplayName(model string) string {
+	switch model {
+	case "google/gemini-2.5-flash-lite":
+		return "Gemini 2.5 Flash Lite"
+	case "meta-llama/llama-4-scout":
+		return "Llama 4 Scout"
+	case "openai/gpt-oss-20b":
+		return "GPT OSS 20B"
+	default:
+		return model
+	}
 }

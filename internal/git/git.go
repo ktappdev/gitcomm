@@ -7,57 +7,56 @@ import (
 )
 
 func StageAll() error {
-	fmt.Println("[debug] git: running 'git add .'")
 	cmd := exec.Command("git", "add", ".")
 	err := cmd.Run()
-	if err != nil {
-		fmt.Println("[debug] git: add error:", err)
-	}
 	return err
 }
 
 func GetStagedChanges() (string, error) {
-	fmt.Println("[debug] git: running 'git diff --staged'")
 	cmd := exec.Command("git", "diff", "--staged")
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println("[debug] git: diff error:", err)
 		return "", err
 	}
-	res := limitDiffSize(string(output), 1500)
-	fmt.Println("[debug] git: staged diff bytes", len(res))
+	res, wasTruncated := limitDiffSizeWithInfo(string(output), 500)
+	
+	// Show useful diff information
+	originalLines := len(strings.Split(string(output), "\n"))
+	if wasTruncated {
+		fmt.Printf("📄 Analyzed %d lines of diff (truncated from %d lines)\n", 500, originalLines)
+	} else {
+		fmt.Printf("📄 Analyzed %d lines of diff\n", originalLines)
+	}
+	
 	return res, nil
 }
 
-func limitDiffSize(diff string, maxLines int) string {
+func limitDiffSizeWithInfo(diff string, maxLines int) (string, bool) {
 	if maxLines <= 0 {
-		return diff
+		return diff, false
 	}
 
 	lines := strings.Split(diff, "\n")
 	if len(lines) <= maxLines {
-		return diff
+		return diff, false
 	}
 
-	return strings.Join(lines[:maxLines], "\n") + fmt.Sprintf("\n... (truncated, %d more lines)", len(lines)-maxLines)
+	truncated := strings.Join(lines[:maxLines], "\n") + fmt.Sprintf("\n... (truncated, %d more lines)", len(lines)-maxLines)
+	return truncated, true
+}
+
+// Keep old function for backward compatibility
+func limitDiffSize(diff string, maxLines int) string {
+	result, _ := limitDiffSizeWithInfo(diff, maxLines)
+	return result
 }
 
 func Commit(message string) error {
-	fmt.Println("[debug] git: running 'git commit -m <message>' len", len(message))
 	cmd := exec.Command("git", "commit", "-m", message)
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("[debug] git: commit error:", err)
-	}
-	return err
+	return cmd.Run()
 }
 
 func Push() error {
-	fmt.Println("[debug] git: running 'git push'")
 	cmd := exec.Command("git", "push")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("[debug] git: push error:", err)
-	}
-	return err
+	return cmd.Run()
 }

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ktappdev/gitcomm/internal/analyzer"
 	"github.com/ktappdev/gitcomm/internal/config"
@@ -40,63 +41,64 @@ func main() {
 	}
 
 	if *stageAllFlag {
-		fmt.Println("Staging all changes...")
+		fmt.Println("📁 Staging all changes...")
 		logf("git.StageAll: invoking")
 		if err := git.StageAll(); err != nil {
-			fmt.Println("Error staging changes:", err)
+			fmt.Printf("❌ Error staging changes: %v\n", err)
 			return
 		}
-		fmt.Println("All changes staged successfully!")
+		fmt.Println("✅ All changes staged successfully!")
 	}
 
 	logf("git.GetStagedChanges: fetching staged diff")
 	diff, err := git.GetStagedChanges()
 	if err != nil {
-		fmt.Println("Error getting git diff:", err)
+		fmt.Printf("❌ Error getting git diff: %v\n", err)
 		return
 	}
 	logf("git.GetStagedChanges: got %d bytes", len(diff))
 
 	if diff == "" {
-		fmt.Println("No staged changes. Please stage your changes before running gitcomm.")
+		fmt.Println("⚠️  No staged changes. Please stage your changes before running gitcomm.")
 		return
 	}
 
-	fmt.Println("Analyzing changes and generating commit message...")
 	logf("analyzer.AnalyzeChanges: begin")
 	commitMessage, err := analyzer.AnalyzeChanges(diff)
 	if err != nil {
-		fmt.Println("Error analyzing changes:", err)
+		fmt.Printf("❌ Error analyzing changes: %v\n", err)
 		return
 	}
 	logf("analyzer.AnalyzeChanges: result length=%d", len(commitMessage))
 
-	fmt.Println("Generated Commit Message:")
+	fmt.Println("\n📝 Generated Commit Message:")
+	fmt.Println("┌" + strings.Repeat("─", 50))
 	fmt.Println(commitMessage)
+	fmt.Println("└" + strings.Repeat("─", 50))
 
 	if *autoFlag || *autoPushFlag {
 		if commitMessage == "" {
-			fmt.Println("Error: Could not extract a commit message from the analysis.")
+			fmt.Println("❌ Error: Could not extract a commit message from the analysis.")
 			return
 		}
-		fmt.Println("Auto-committing with the generated message...")
+		fmt.Println("\n💾 Auto-committing with the generated message...")
 		logf("git.Commit: committing")
 		err = git.Commit(commitMessage)
 		if err != nil {
-			fmt.Println("Error committing:", err)
+			fmt.Printf("❌ Error committing: %v\n", err)
 			return
 		}
-		fmt.Println("Changes committed successfully!")
+		fmt.Println("✅ Changes committed successfully!")
 
 		if *autoPushFlag {
-			fmt.Println("Pushing changes to remote repository...")
+			fmt.Println("🚀 Pushing changes to remote repository...")
 			logf("git.Push: pushing")
 			err = git.Push()
 			if err != nil {
-				fmt.Println("Error pushing changes:", err)
+				fmt.Printf("❌ Error pushing changes: %v\n", err)
 				return
 			}
-			fmt.Println("Changes pushed successfully!")
+			fmt.Println("✅ Changes pushed successfully!")
 		}
 	}
 }
@@ -105,23 +107,15 @@ func runSetup() error {
 	cfg := &config.Config{}
 
 	fmt.Println("Welcome to GitComm Setup!")
-	fmt.Println("Press Enter to skip any provider you don't want to configure.")
+	fmt.Println("This will configure your OpenRouter API key.")
 	fmt.Println()
 
-	fmt.Print("Enter Gemini API key (recommended): ")
-	fmt.Scanln(&cfg.GeminiAPIKey)
-	logf("setup: gemini set=%v", cfg.GeminiAPIKey != "")
+	fmt.Print("Enter OpenRouter API key: ")
+	fmt.Scanln(&cfg.OpenRouterAPIKey)
+	logf("setup: openrouter set=%v", cfg.OpenRouterAPIKey != "")
 
-	fmt.Print("Enter Groq API key (optional fallback): ")
-	fmt.Scanln(&cfg.GroqAPIKey)
-	logf("setup: groq set=%v", cfg.GroqAPIKey != "")
-
-	fmt.Print("Enter OpenAI API key (optional fallback): ")
-	fmt.Scanln(&cfg.OpenAIAPIKey)
-	logf("setup: openai set=%v", cfg.OpenAIAPIKey != "")
-
-	if cfg.GeminiAPIKey == "" && cfg.GroqAPIKey == "" && cfg.OpenAIAPIKey == "" {
-		return fmt.Errorf("at least one API key must be provided")
+	if cfg.OpenRouterAPIKey == "" {
+		return fmt.Errorf("OpenRouter API key is required")
 	}
 
 	if err := config.SaveConfig(cfg); err != nil {

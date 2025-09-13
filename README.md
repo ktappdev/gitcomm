@@ -1,11 +1,12 @@
 # GitComm
 
-GitComm is a CLI tool that uses LLMs (Gemini by default) to automatically generate meaningful Git commit messages by analyzing your staged changes.
+GitComm is a CLI tool that uses LLMs to automatically generate meaningful Git commit messages by analyzing your staged changes. It uses OpenRouter to access multiple models with automatic fallback support.
 
 ## Features
 
 - 🤖 Uses AI to analyze staged changes and generate commit messages
-- ⚡ Powered by Google's Gemini (with Groq and OpenAI fallback support)
+- ⚡ Powered by OpenRouter with multiple model fallback support
+- 🔄 Automatic model fallback: Gemini → Llama → GPT
 - 🚀 Auto-commit and push capabilities
 - 💻 Cross-platform support (Windows, macOS, Linux)
 
@@ -39,27 +40,27 @@ go build
 
 ## Setup
 
-You have two options to configure your API keys:
+You have two options to configure your OpenRouter API key:
 
 1. Interactive Setup (Recommended):
    ```bash
    gitcomm -setup
    ```
-   This will guide you through setting up your API keys.
+   This will guide you through setting up your OpenRouter API key.
 
-2. Environment Variables:
+2. Environment Variable:
    ```bash
-   # For Gemini (default)
-   export GEMINI_API_KEY=your_gemini_api_key
-   
-   # For Groq (optional fallback)
-   export GROQ_API_KEY=your_groq_api_key
-   
-   # For OpenAI (optional fallback)
-   export OPENAI_API_KEY=your_openai_api_key
+   export OPEN_ROUTER_API_KEY=your_openrouter_api_key
    ```
 
 API keys are stored securely in `~/.gitcomm/config.json`. Environment variables will override stored configuration.
+
+### Getting an OpenRouter API Key
+
+1. Visit [OpenRouter.ai](https://openrouter.ai)
+2. Sign up for an account
+3. Generate an API key from your dashboard
+4. Use the key in the setup process above
 
 ## Usage
 
@@ -107,16 +108,90 @@ gitcomm -sa -ap
 
 GitComm uses the following defaults:
 
-- LLM Provider: Gemini
-- Model: gemini-1.5-flash-8b
-- Max Tokens: 50 (approximately 2 lines of text)
+- LLM Provider: OpenRouter
+- Models (with fallback):
+  1. `google/gemini-2.5-flash-lite` (Primary)
+  2. `meta-llama/llama-4-scout` (Fallback 1)
+  3. `openai/gpt-oss-20b` (Fallback 2)
+- Max Tokens: 400 (allows for proper Git commit format with subject + body)
 - Temperature: 0.7 (balanced between creativity and consistency)
+- Diff size limit: 500 lines (truncated with note if exceeded)
+- Timeout: 30 seconds per model attempt
+- Commit Format: Subject line (50-72 chars) + blank line + detailed body
+
+### Model Fallback System
+
+GitComm automatically tries multiple models if one fails:
+
+1. **Primary Model**: `google/gemini-2.5-flash-lite` - Fast and capable for most commit messages
+2. **Fallback 1**: `meta-llama/llama-4-scout` - Strong performance if Gemini is unavailable  
+3. **Fallback 2**: `openai/gpt-oss-20b` - Reliable final option
+
+Commit messages follow proper Git format with a concise subject line and detailed body explaining the changes. If all models fail, you'll see an error message.
+
+### Example Output
+
+**Basic Usage:**
+```
+📄 Analyzed 45 lines of diff
+🤖 Generating commit message...
+⚡ Using Gemini 2.5 Flash Lite
+
+📝 Generated Commit Message:
+┌──────────────────────────────────────────────────
+Add user authentication system
+
+Implement JWT-based authentication with bcrypt password hashing
+for enhanced security. Add middleware for protecting authenticated
+routes and validation for email/password requirements.
+
+Updates database schema to include user roles and timestamps for
+better user management and audit trails.
+└──────────────────────────────────────────────────
+```
+
+**With Model Fallback:**
+```
+📄 Analyzed 127 lines of diff (truncated from 890 lines)
+🤖 Generating commit message...
+⚡ Using Gemini 2.5 Flash Lite
+⚠️  Gemini 2.5 Flash Lite failed, trying next model...
+🔄 Falling back to Llama 4 Scout
+
+📝 Generated Commit Message:
+┌──────────────────────────────────────────────────
+Refactor database connection handling
+
+Replace deprecated connection pooling with modern async patterns.
+Improves performance and reduces memory usage under high load.
+└──────────────────────────────────────────────────
+```
+
+**Auto-commit and Push:**
+```
+📁 Staging all changes...
+✅ All changes staged successfully!
+📄 Analyzed 23 lines of diff
+🤖 Generating commit message...
+⚡ Using Gemini 2.5 Flash Lite
+
+📝 Generated Commit Message:
+┌──────────────────────────────────────────────────
+Fix bug in user login validation
+
+Correct email format validation regex that was rejecting valid
+email addresses with subdomain patterns.
+└──────────────────────────────────────────────────
+
+💾 Auto-committing with the generated message...
+✅ Changes committed successfully!
+🚀 Pushing changes to remote repository...
+✅ Changes pushed successfully!
+```
 
 ## Environment Variables
 
-- `GEMINI_API_KEY`: Your Gemini API key (required by default)
-- `GROQ_API_KEY`: Your Groq API key (optional, for fallback)
-- `OPENAI_API_KEY`: Your OpenAI API key (optional, for fallback)
+- `OPEN_ROUTER_API_KEY`: Your OpenRouter API key (required)
 
 ## Command Line Flags
 
@@ -134,7 +209,7 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Acknowledgments
 
-- [Google](https://cloud.google.com/gemini) for their fast LLM API
+- [OpenRouter](https://openrouter.ai) for their unified LLM API with model fallback support
 - The Go community for the excellent tooling
 
 ## Troubleshooting
@@ -144,10 +219,10 @@ MIT License - see [LICENSE](LICENSE) for details
 1. **No API Key Set**
 
    ```
-   Error: API key not set for provider gemini
+   OpenRouter API key not set in config file or OPEN_ROUTER_API_KEY environment variable
    ```
 
-   Solution: Set your GEMINI_API_KEY environment variable
+   Solution: Set your OPEN_ROUTER_API_KEY environment variable or run `gitcomm -setup`
 
 2. **No Staged Changes**
 
