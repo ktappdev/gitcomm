@@ -55,26 +55,51 @@ better user management and audit trails.`
 		return "", err
 	}
 
+	// Debug: show raw response
+	fmt.Printf("\n[DEBUG] Raw LLM Response:\n%s\n[END DEBUG]\n\n", response)
+
 	commitMessage := extractCommitMessage(response)
 
 	return commitMessage, nil
 }
 
 func extractCommitMessage(response string) string {
-	// Look for the "Generated Commit Message:" marker
-	marker := "Generated Commit Message:"
-	idx := strings.Index(response, marker)
-	if idx == -1 {
-		return "update" // fallback if marker not found
+	// Try multiple markers in case the model uses different formatting
+	markers := []string{
+		"Generated Commit Message:",
+		"Commit Message:",
+		"**Generated Commit Message:**",
+		"## Generated Commit Message",
 	}
-
-	// Extract everything after the marker
-	commitMessage := strings.TrimSpace(response[idx+len(marker):])
-	if commitMessage == "" {
-		return "update" // fallback if empty
+	
+	for _, marker := range markers {
+		idx := strings.Index(response, marker)
+		if idx != -1 {
+			// Extract everything after the marker
+			commitMessage := strings.TrimSpace(response[idx+len(marker):])
+			if commitMessage != "" {
+				// Clean up any extra formatting
+				commitMessage = strings.TrimPrefix(commitMessage, "\n")
+				commitMessage = strings.TrimSuffix(commitMessage, "\n")
+				return commitMessage
+			}
+		}
 	}
-
-	// Return the complete multi-line commit message
-	// This preserves the Git format: subject + blank line + body
-	return commitMessage
+	
+	// If no marker found, try to extract a reasonable commit message from the response
+	lines := strings.Split(strings.TrimSpace(response), "\n")
+	if len(lines) > 0 {
+		// Take the first non-empty line as the subject
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" && !strings.HasPrefix(line, "#") && !strings.HasPrefix(line, "```") {
+				// If it looks like a reasonable commit message, return it
+			if len(line) > 10 && len(line) < 100 {
+				return line
+			}
+			}
+		}
+	}
+	
+	return "update" // fallback if we can't parse anything useful
 }
