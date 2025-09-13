@@ -6,7 +6,7 @@ GitComm is a CLI tool that uses LLMs to automatically generate meaningful Git co
 
 - 🤖 Uses AI to analyze staged changes and generate commit messages
 - ⚡ Powered by OpenRouter with multiple model fallback support
-- 🔄 Automatic model fallback: Gemini → Llama → GPT
+- 🔄 Automatic model fallback: GPT OSS → Llama → Gemini
 - 🚀 Auto-commit and push capabilities
 - 💻 Cross-platform support (Windows, macOS, Linux)
 
@@ -110,12 +110,12 @@ GitComm uses the following defaults:
 
 - LLM Provider: OpenRouter
 - Models (with fallback):
-  1. `google/gemini-2.5-flash-lite` (Primary)
+  1. `openai/gpt-oss-20b` (Primary)
   2. `meta-llama/llama-4-scout` (Fallback 1)
-  3. `openai/gpt-oss-20b` (Fallback 2)
+  3. `google/gemini-2.5-flash-lite` (Fallback 2)
 - Max Tokens: 400 (allows for proper Git commit format with subject + body)
 - Temperature: 0.7 (balanced between creativity and consistency)
-- Diff size limit: 500 lines (truncated with note if exceeded)
+- Diff size limit: 1,500 lines (truncated with note if exceeded)
 - Timeout: 30 seconds per model attempt
 - Commit Format: Subject line (50-72 chars) + blank line + detailed body
 
@@ -123,9 +123,9 @@ GitComm uses the following defaults:
 
 GitComm automatically tries multiple models if one fails:
 
-1. **Primary Model**: `google/gemini-2.5-flash-lite` - Fast and capable for most commit messages
-2. **Fallback 1**: `meta-llama/llama-4-scout` - Strong performance if Gemini is unavailable  
-3. **Fallback 2**: `openai/gpt-oss-20b` - Reliable final option
+1. **Primary Model**: `openai/gpt-oss-20b` - Reliable and high quality for most commit messages
+2. **Fallback 1**: `meta-llama/llama-4-scout` - Strong performance if GPT OSS is unavailable  
+3. **Fallback 2**: `google/gemini-2.5-flash-lite` - Fast and capable final option
 
 Commit messages follow proper Git format with a concise subject line and detailed body explaining the changes. If all models fail, you'll see an error message.
 
@@ -135,7 +135,7 @@ Commit messages follow proper Git format with a concise subject line and detaile
 ```
 📄 Analyzed 45 lines of diff
 🤖 Generating commit message...
-⚡ Using Gemini 2.5 Flash Lite
+⚡ Using GPT OSS 20B
 
 📝 Generated Commit Message:
 ┌──────────────────────────────────────────────────
@@ -154,8 +154,8 @@ better user management and audit trails.
 ```
 📄 Analyzed 127 lines of diff (truncated from 890 lines)
 🤖 Generating commit message...
-⚡ Using Gemini 2.5 Flash Lite
-⚠️  Gemini 2.5 Flash Lite failed, trying next model...
+⚡ Using GPT OSS 20B
+⚠️  GPT OSS 20B failed, trying next model...
 🔄 Falling back to Llama 4 Scout
 
 📝 Generated Commit Message:
@@ -173,7 +173,7 @@ Improves performance and reduces memory usage under high load.
 ✅ All changes staged successfully!
 📄 Analyzed 23 lines of diff
 🤖 Generating commit message...
-⚡ Using Gemini 2.5 Flash Lite
+⚡ Using GPT OSS 20B
 
 📝 Generated Commit Message:
 ┌──────────────────────────────────────────────────

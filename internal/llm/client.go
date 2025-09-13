@@ -54,9 +54,9 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 	// Models to try in order (primary first, then fallbacks)
 	models := []string{
-		"google/gemini-2.5-flash-lite",  // Primary: Fast and capable
+		"openai/gpt-oss-20b",           // Primary: Reliable and high quality
 		"meta-llama/llama-4-scout",      // Fallback 1: Strong performance
-		"openai/gpt-oss-20b",           // Fallback 2: Reliable final option
+		"google/gemini-2.5-flash-lite",  // Fallback 2: Fast and capable
 	}
 
 	return &Client{

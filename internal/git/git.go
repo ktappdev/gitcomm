@@ -18,12 +18,12 @@ func GetStagedChanges() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	res, wasTruncated := limitDiffSizeWithInfo(string(output), 500)
+	res, wasTruncated := limitDiffSizeWithInfo(string(output), 1500)
 	
 	// Show useful diff information
 	originalLines := len(strings.Split(string(output), "\n"))
 	if wasTruncated {
-		fmt.Printf("📄 Analyzed %d lines of diff (truncated from %d lines)\n", 500, originalLines)
+		fmt.Printf("📄 Analyzed %d lines of diff (truncated from %d lines)\n", 1500, originalLines)
 	} else {
 		fmt.Printf("📄 Analyzed %d lines of diff\n", originalLines)
 	}

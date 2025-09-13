@@ -77,9 +77,9 @@ go test ./internal/analyzer -run TestName -v
 
 **Provider**: OpenRouter (https://openrouter.ai)
 **Model Fallback Chain**:
-1. `google/gemini-2.5-flash-lite` (Primary: Fast and capable)
+1. `openai/gpt-oss-20b` (Primary: Reliable and high quality)
 2. `meta-llama/llama-4-scout` (Fallback 1: Strong performance)  
-3. `openai/gpt-oss-20b` (Fallback 2: Reliable final option)
+3. `google/gemini-2.5-flash-lite` (Fallback 2: Fast and capable)
 
 **Provider Configuration**:
 - OpenRouter: `OPEN_ROUTER_API_KEY` environment variable
@@ -87,7 +87,7 @@ go test ./internal/analyzer -run TestName -v
 **LLM Settings** (optimized for proper Git commit format):
 - Max tokens: 400
 - Temperature: 0.7
-- Diff size limit: 500 lines (truncated with note if exceeded)
+- Diff size limit: 1,500 lines (truncated with note if exceeded)
 - Timeout: 30 seconds per model attempt
 - Commit format: Subject line (50-72 chars) + blank line + detailed body (72 chars/line)
 
