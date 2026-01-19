@@ -21,6 +21,15 @@ var DefaultModels = []string{
 	"google/gemini-2.5-flash-lite",          // Fallback 2: Fast and capable
 }
 
+func Path() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(homeDir, ".gitcomm", "config.json"), nil
+}
+
 type Config struct {
 	OpenRouterAPIKey string   `json:"open_router_api_key"`
 	Models           []string `json:"models,omitempty"`
@@ -44,21 +53,15 @@ func DefaultConfig() *Config {
 }
 
 func LoadConfig() (*Config, error) {
-	// Try loading from config file first
-	homeDir, err := os.UserHomeDir()
+	config := DefaultConfig()
+
+	configPath, err := Path()
 	if err != nil {
 		return nil, err
 	}
 
-	configPath := filepath.Join(homeDir, ".gitcomm", "config.json")
-	config := &Config{}
-
-	// Check if config file exists
-	if _, err := os.Stat(configPath); err == nil {
-		data, err := os.ReadFile(configPath)
-		if err == nil {
-			json.Unmarshal(data, config)
-		}
+	if data, err := os.ReadFile(configPath); err == nil {
+		json.Unmarshal(data, config)
 	}
 
 	// Environment variables override config file
