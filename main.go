@@ -104,6 +104,37 @@ func main() {
 }
 
 func runSetup() error {
+	configPath, err := config.Path()
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(configPath); err == nil {
+		fmt.Printf("Config file already exists at %s\n", configPath)
+		fmt.Print("Overwrite? (y = overwrite, k = keep, b = backup+overwrite): ")
+
+		var choice string
+		fmt.Scanln(&choice)
+		choice = strings.ToLower(strings.TrimSpace(choice))
+
+		switch choice {
+		case "k", "":
+			fmt.Println("Keeping existing config. Setup cancelled.")
+			return nil
+		case "b":
+			backupPath := configPath + ".bak"
+			if err := os.Rename(configPath, backupPath); err != nil {
+				return fmt.Errorf("failed to backup existing config: %w", err)
+			}
+			fmt.Printf("Backed up existing config to %s\n", backupPath)
+		case "y":
+			// continue to overwrite
+		default:
+			fmt.Println("Unrecognized choice. Keeping existing config. Setup cancelled.")
+			return nil
+		}
+	}
+
 	cfg := config.DefaultConfig()
 
 	fmt.Println("Welcome to GitComm Setup!")

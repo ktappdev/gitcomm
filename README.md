@@ -47,6 +47,7 @@ You have two options to configure your OpenRouter API key:
    gitcomm -setup
    ```
    This collects your OpenRouter API key and seeds `~/.gitcomm/config.json` with the default LLM models, token/temperature settings, API URL, and timeout so you can edit them later.
+   If a config file already exists, setup will prompt you to keep it, overwrite it, or back it up before overwriting.
 
 2. Environment Variable:
    ```bash
