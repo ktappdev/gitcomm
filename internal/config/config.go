@@ -8,9 +8,18 @@ import (
 )
 
 const (
-	OpenRouterAPIKeyEnv = "OPEN_ROUTER_API_KEY"
-	OpenRouterAPIURL    = "https://openrouter.ai/api/v1/chat/completions"
+	OpenRouterAPIKeyEnv   = "OPEN_ROUTER_API_KEY"
+	OpenRouterAPIURL      = "https://openrouter.ai/api/v1/chat/completions"
+	DefaultMaxTokens      = 400
+	DefaultTemperature    = 0.7
+	DefaultTimeoutSeconds = 30
 )
+
+var DefaultModels = []string{
+	"meta-llama/llama-3.3-8b-instruct:free", // Primary: Free and capable
+	"meta-llama/llama-4-scout",              // Fallback 1: Strong performance
+	"google/gemini-2.5-flash-lite",          // Fallback 2: Fast and capable
+}
 
 type Config struct {
 	OpenRouterAPIKey string   `json:"open_router_api_key"`
@@ -19,6 +28,19 @@ type Config struct {
 	Temperature      float64  `json:"temperature,omitempty"`
 	APIURL           string   `json:"api_url,omitempty"`
 	TimeoutSeconds   int      `json:"timeout_seconds,omitempty"`
+}
+
+func DefaultConfig() *Config {
+	models := make([]string, len(DefaultModels))
+	copy(models, DefaultModels)
+
+	return &Config{
+		Models:         models,
+		MaxTokens:      DefaultMaxTokens,
+		Temperature:    DefaultTemperature,
+		APIURL:         OpenRouterAPIURL,
+		TimeoutSeconds: DefaultTimeoutSeconds,
+	}
 }
 
 func LoadConfig() (*Config, error) {

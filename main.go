@@ -104,7 +104,7 @@ func main() {
 }
 
 func runSetup() error {
-	cfg := &config.Config{}
+	cfg := config.DefaultConfig()
 
 	fmt.Println("Welcome to GitComm Setup!")
 	fmt.Println("This will configure your OpenRouter API key.")
