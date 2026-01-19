@@ -14,9 +14,16 @@ import (
 
 const (
 	// Default settings for commit messages
-	DefaultMaxTokens   int32   = 400 // Allow for detailed commit messages
-	DefaultTemperature float32 = 0.7 // Slightly creative but not too random
+	DefaultMaxTokens      int32   = 400 // Allow for detailed commit messages
+	DefaultTemperature    float32 = 0.7 // Slightly creative but not too random
+	DefaultTimeoutSeconds         = 30  // Per-model timeout
 )
+
+var defaultModels = []string{
+	"meta-llama/llama-3.3-8b-instruct:free", // Primary: Free and capable
+	"meta-llama/llama-4-scout",              // Fallback 1: Strong performance
+	"google/gemini-2.5-flash-lite",          // Fallback 2: Fast and capable
+}
 
 type ClientConfig struct {
 	MaxTokens   int32
@@ -53,20 +60,38 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		return nil, fmt.Errorf("OpenRouter API key not set in config file or %s environment variable", config.OpenRouterAPIKeyEnv)
 	}
 
-	// Models to try in order (primary first, then fallbacks)
-	models := []string{
-		"meta-llama/llama-3.3-8b-instruct:free", // Primary: Free and capable
-		"meta-llama/llama-4-scout",             // Fallback 1: Strong performance
-		"google/gemini-2.5-flash-lite",         // Fallback 2: Fast and capable
+	models := defaultModels
+	if len(appConfig.Models) > 0 {
+		models = appConfig.Models
+	}
+
+	apiURL := config.OpenRouterAPIURL
+	if appConfig.APIURL != "" {
+		apiURL = appConfig.APIURL
+	}
+
+	maxTokens := cfg.MaxTokens
+	if appConfig.MaxTokens > 0 {
+		maxTokens = int32(appConfig.MaxTokens)
+	}
+
+	temperature := cfg.Temperature
+	if appConfig.Temperature > 0 {
+		temperature = float32(appConfig.Temperature)
+	}
+
+	timeoutSeconds := DefaultTimeoutSeconds
+	if appConfig.TimeoutSeconds > 0 {
+		timeoutSeconds = appConfig.TimeoutSeconds
 	}
 
 	return &Client{
 		apiKey:      apiKey,
-		apiURL:      config.OpenRouterAPIURL,
-		maxTokens:   cfg.MaxTokens,
-		temperature: cfg.Temperature,
+		apiURL:      apiURL,
+		maxTokens:   maxTokens,
+		temperature: temperature,
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: time.Duration(timeoutSeconds) * time.Second,
 		},
 		models: models,
 	}, nil
@@ -78,7 +103,7 @@ func (c *Client) Close() error {
 
 func (c *Client) SendPrompt(prompt string) (string, error) {
 	var lastErr error
-	
+
 	for i, model := range c.models {
 		// Show which model we're trying
 		if i == 0 {
@@ -86,14 +111,14 @@ func (c *Client) SendPrompt(prompt string) (string, error) {
 		} else {
 			fmt.Printf("🔄 Falling back to %s\n", getModelDisplayName(model))
 		}
-		
+
 		response, err := c.tryModel(model, prompt)
 		if err == nil {
 			return response, nil
 		}
-		
+
 		lastErr = err
-		
+
 		// Only show error if this isn't the last model
 		if i < len(c.models)-1 {
 			if strings.Contains(lastErr.Error(), "empty response") {
@@ -103,7 +128,7 @@ func (c *Client) SendPrompt(prompt string) (string, error) {
 			}
 		}
 	}
-	
+
 	return "", fmt.Errorf("all models failed, last error: %w", lastErr)
 }
 

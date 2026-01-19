@@ -106,6 +106,25 @@ gitcomm -sa -ap
 
 ## Configuration
 
+GitComm uses config values first (from `~/.gitcomm/config.json`) and falls back to built-in defaults when fields are missing.
+
+You can start from the sample config in `config.example.json`.
+
+```json
+{
+  "open_router_api_key": "your_openrouter_api_key",
+  "models": [
+    "meta-llama/llama-3.3-8b-instruct:free",
+    "meta-llama/llama-4-scout",
+    "google/gemini-2.5-flash-lite"
+  ],
+  "max_tokens": 400,
+  "temperature": 0.7,
+  "api_url": "https://openrouter.ai/api/v1/chat/completions",
+  "timeout_seconds": 30
+}
+```
+
 GitComm uses the following defaults:
 
 - LLM Provider: OpenRouter
