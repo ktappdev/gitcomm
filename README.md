@@ -2,6 +2,8 @@
 
 GitComm is a CLI tool that uses LLMs to automatically generate meaningful Git commit messages by analyzing your staged changes. It uses OpenRouter to access multiple models with automatic fallback support.
 
+GitComm also aims to be free-friendly: by default it uses OpenRouter models that are typically available on a free tier. The first two default models (`meta-llama/llama-3.3-8b-instruct:free` and `meta-llama/llama-4-scout`) are usually free on OpenRouter; the third model is a stronger fallback. You only need an OpenRouter API key (a free key works as long as those models remain free), and you can always update `~/.gitcomm/config.json` later to point at other free models if pricing changes.
+
 ## Features
 
 - 🤖 Uses AI to analyze staged changes and generate commit messages
@@ -46,7 +48,7 @@ You have two options to configure your OpenRouter API key:
    ```bash
    gitcomm -setup
    ```
-   This collects your OpenRouter API key and seeds `~/.gitcomm/config.json` with the default LLM models, token/temperature settings, API URL, and timeout so you can edit them later.
+   This collects your OpenRouter API key and seeds `~/.gitcomm/config.json` with the default LLM models, token/temperature settings, API URL, and timeout so you can edit them later. If `OPEN_ROUTER_API_KEY` is already set in your environment, setup will offer to use it without storing the key in the config file.
    If a config file already exists, setup will prompt you to keep it, overwrite it, or back it up before overwriting.
 
 2. Environment Variable:
@@ -54,7 +56,7 @@ You have two options to configure your OpenRouter API key:
    export OPEN_ROUTER_API_KEY=your_openrouter_api_key
    ```
 
-API keys are stored securely in `~/.gitcomm/config.json`. Environment variables will override stored configuration. If you prefer to edit manually, copy `config.example.json` to `~/.gitcomm/config.json` and fill in your API key.
+API keys are stored securely in `~/.gitcomm/config.json`. When you choose to reuse an environment key during setup, the key isn’t written to disk; GitComm will read it from the environment on each run. Environment variables always override stored configuration. If you prefer to edit manually, copy `config.example.json` to `~/.gitcomm/config.json` and fill in your API key.
 
 ### Getting an OpenRouter API Key
 
@@ -138,6 +140,8 @@ GitComm uses the following defaults:
 - Diff size limit: 1,500 lines (truncated with note if exceeded)
 - Timeout: 30 seconds per model attempt
 - Commit Format: Subject line (50-72 chars) + blank line + detailed body
+
+The first two models in this list are chosen because they are typically available on OpenRouter's free tier; the third is a stronger fallback that may require paid credits. If OpenRouter's free offerings change, you can edit the `models` array in `~/.gitcomm/config.json` to point to other free models.
 
 ### Model Fallback System
 

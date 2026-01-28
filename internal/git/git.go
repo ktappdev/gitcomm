@@ -8,18 +8,31 @@ import (
 
 func StageAll() error {
 	cmd := exec.Command("git", "add", ".")
-	err := cmd.Run()
-	return err
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		msg := strings.TrimSpace(string(output))
+		if msg != "" {
+			return fmt.Errorf("%s", msg)
+		}
+		return err
+	}
+	return nil
 }
 
 func GetStagedChanges() (string, error) {
 	cmd := exec.Command("git", "diff", "--staged")
 	output, err := cmd.Output()
 	if err != nil {
+		errCmd := exec.Command("git", "diff", "--staged")
+		errOutput, _ := errCmd.CombinedOutput()
+		msg := strings.TrimSpace(string(errOutput))
+		if msg != "" {
+			return "", fmt.Errorf("%s", msg)
+		}
 		return "", err
 	}
 	res, wasTruncated := limitDiffSizeWithInfo(string(output), 1500)
-	
+
 	// Show useful diff information
 	originalLines := len(strings.Split(string(output), "\n"))
 	if wasTruncated {
@@ -27,7 +40,7 @@ func GetStagedChanges() (string, error) {
 	} else {
 		fmt.Printf("📄 Analyzed %d lines of diff\n", originalLines)
 	}
-	
+
 	return res, nil
 }
 

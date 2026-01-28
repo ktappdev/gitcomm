@@ -34,6 +34,7 @@ func main() {
 		logf("runSetup: starting interactive setup")
 		if err := runSetup(); err != nil {
 			fmt.Println("Setup failed:", err)
+			printHelp()
 			return
 		}
 		fmt.Println("Setup completed successfully!")
@@ -44,7 +45,13 @@ func main() {
 		fmt.Println("📁 Staging all changes...")
 		logf("git.StageAll: invoking")
 		if err := git.StageAll(); err != nil {
-			fmt.Printf("❌ Error staging changes: %v\n", err)
+			if strings.Contains(err.Error(), "not a git repository") {
+				fmt.Println("❌ This directory is not a Git repository.")
+				fmt.Println("   Run `git init` to create one, or run gitcomm inside an existing repo.")
+			} else {
+				fmt.Printf("❌ Error staging changes: %v\n", err)
+			}
+			printHelp()
 			return
 		}
 		fmt.Println("✅ All changes staged successfully!")
@@ -53,13 +60,20 @@ func main() {
 	logf("git.GetStagedChanges: fetching staged diff")
 	diff, err := git.GetStagedChanges()
 	if err != nil {
-		fmt.Printf("❌ Error getting git diff: %v\n", err)
+		if strings.Contains(err.Error(), "not a git repository") {
+			fmt.Println("❌ This directory is not a Git repository.")
+			fmt.Println("   Run `git init` to create one, or run gitcomm inside an existing repo.")
+		} else {
+			fmt.Printf("❌ Error getting git diff: %v\n", err)
+		}
+		printHelp()
 		return
 	}
 	logf("git.GetStagedChanges: got %d bytes", len(diff))
 
 	if diff == "" {
 		fmt.Println("⚠️  No staged changes. Please stage your changes before running gitcomm.")
+		printHelp()
 		return
 	}
 
@@ -67,6 +81,7 @@ func main() {
 	commitMessage, err := analyzer.AnalyzeChanges(diff)
 	if err != nil {
 		fmt.Printf("❌ Error analyzing changes: %v\n", err)
+		printHelp()
 		return
 	}
 	logf("analyzer.AnalyzeChanges: result length=%d", len(commitMessage))
@@ -79,6 +94,7 @@ func main() {
 	if *autoFlag || *autoPushFlag {
 		if commitMessage == "" {
 			fmt.Println("❌ Error: Could not extract a commit message from the analysis.")
+			printHelp()
 			return
 		}
 		fmt.Println("\n💾 Auto-committing with the generated message...")
@@ -86,6 +102,7 @@ func main() {
 		err = git.Commit(commitMessage)
 		if err != nil {
 			fmt.Printf("❌ Error committing: %v\n", err)
+			printHelp()
 			return
 		}
 		fmt.Println("✅ Changes committed successfully!")
@@ -96,6 +113,7 @@ func main() {
 			err = git.Push()
 			if err != nil {
 				fmt.Printf("❌ Error pushing changes: %v\n", err)
+				printHelp()
 				return
 			}
 			fmt.Println("✅ Changes pushed successfully!")
@@ -137,16 +155,32 @@ func runSetup() error {
 
 	cfg := config.DefaultConfig()
 
+	envKey := os.Getenv(config.OpenRouterAPIKeyEnv)
+	useEnvKey := false
+	if envKey != "" {
+		fmt.Printf("Found %s in environment. Use it? (Y/n): ", config.OpenRouterAPIKeyEnv)
+		var choice string
+		fmt.Scanln(&choice)
+		choice = strings.ToLower(strings.TrimSpace(choice))
+		if choice == "" || choice == "y" || choice == "yes" {
+			useEnvKey = true
+		}
+	}
+
 	fmt.Println("Welcome to GitComm Setup!")
 	fmt.Println("This will configure your OpenRouter API key.")
 	fmt.Println()
+	if useEnvKey {
+		fmt.Printf("Using API key from %s. It will not be stored in config.\n", config.OpenRouterAPIKeyEnv)
+		logf("setup: openrouter use_env=true")
+	} else {
+		fmt.Print("Enter OpenRouter API key: ")
+		fmt.Scanln(&cfg.OpenRouterAPIKey)
+		logf("setup: openrouter set=%v", cfg.OpenRouterAPIKey != "")
 
-	fmt.Print("Enter OpenRouter API key: ")
-	fmt.Scanln(&cfg.OpenRouterAPIKey)
-	logf("setup: openrouter set=%v", cfg.OpenRouterAPIKey != "")
-
-	if cfg.OpenRouterAPIKey == "" {
-		return fmt.Errorf("OpenRouter API key is required")
+		if cfg.OpenRouterAPIKey == "" {
+			return fmt.Errorf("OpenRouter API key is required")
+		}
 	}
 
 	if err := config.SaveConfig(cfg); err != nil {
@@ -161,4 +195,23 @@ func runSetup() error {
 	fmt.Printf("Config file location: %s/.gitcomm/config.json\n", hd)
 
 	return nil
+}
+
+func printHelp() {
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println("  gitcomm [flags]")
+	fmt.Println()
+	fmt.Println("Flags:")
+	fmt.Println("  -setup   Run interactive setup to configure API keys")
+	fmt.Println("  -auto    Automatically commit with the generated message")
+	fmt.Println("  -ap      Automatically commit and push with the generated message")
+	fmt.Println("  -sa      Stage all changes before analyzing")
+	fmt.Println("  -debug   Enable verbose debug logging")
+	fmt.Println()
+	fmt.Println("Common examples:")
+	fmt.Println("  gitcomm")
+	fmt.Println("  gitcomm -sa")
+	fmt.Println("  gitcomm -sa -auto")
+	fmt.Println("  gitcomm -sa -ap")
 }
