@@ -18,7 +18,7 @@ const (
 
 var DefaultModels = []string{
 	"openai/gpt-oss-120b:free",     // Primary: Free and capable
-	"openai/gpt-oss-20b:free",      // Fallback 1: Strong performance
+	"openai/gpt-oss-120b",          // Fallback 1: Strong performance
 	"google/gemini-2.5-flash-lite", // Fallback 2: Fast and capable
 }
 
