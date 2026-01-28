@@ -51,12 +51,12 @@ You have two options to configure your OpenRouter API key:
    This collects your OpenRouter API key and seeds `~/.gitcomm/config.json` with the default LLM models, token/temperature settings, API URL, and timeout so you can edit them later. If `OPEN_ROUTER_API_KEY` is already set in your environment, setup will offer to use it without storing the key in the config file.
    If a config file already exists, setup will prompt you to keep it, overwrite it, or back it up before overwriting.
 
-2. Environment Variable:
+2. Environment Variable (set `OPENROUTER_API_KEY` in your shell; `OPEN_ROUTER_API_KEY` is also supported):
    ```bash
-   export OPEN_ROUTER_API_KEY=your_openrouter_api_key
+   export OPENROUTER_API_KEY=your_openrouter_api_key
    ```
 
-API keys are stored securely in `~/.gitcomm/config.json`. When you choose to reuse an environment key during setup, the key isn’t written to disk; GitComm will read it from the environment on each run. Environment variables always override stored configuration. If you prefer to edit manually, copy `config.example.json` to `~/.gitcomm/config.json` and fill in your API key.
+API keys are stored securely in `~/.gitcomm/config.json`. When you choose to reuse an environment key during setup, the key isn’t written to disk; GitComm will read it from the environment on each run. Environment variables always override stored configuration. `OPENROUTER_API_KEY` is the primary name; `OPEN_ROUTER_API_KEY` is accepted for compatibility. If you prefer to edit manually, copy `config.example.json` to `~/.gitcomm/config.json` and fill in your API key.
 
 ### Getting an OpenRouter API Key
 
@@ -215,7 +215,8 @@ email addresses with subdomain patterns.
 
 ## Environment Variables
 
-- `OPEN_ROUTER_API_KEY`: Your OpenRouter API key (required)
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (preferred)
+- `OPEN_ROUTER_API_KEY`: Your OpenRouter API key (legacy/compatibility)
 
 ## Command Line Flags
 

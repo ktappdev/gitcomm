@@ -155,10 +155,15 @@ func runSetup() error {
 
 	cfg := config.DefaultConfig()
 
-	envKey := os.Getenv(config.OpenRouterAPIKeyEnv)
+	envKey := os.Getenv(config.OpenRouterAPIKeyEnvPrimary)
+	envName := config.OpenRouterAPIKeyEnvPrimary
+	if envKey == "" {
+		envKey = os.Getenv(config.OpenRouterAPIKeyEnvLegacy)
+		envName = config.OpenRouterAPIKeyEnvLegacy
+	}
 	useEnvKey := false
 	if envKey != "" {
-		fmt.Printf("Found %s in environment. Use it? (Y/n): ", config.OpenRouterAPIKeyEnv)
+		fmt.Printf("Found %s in environment. Use it? (Y/n): ", envName)
 		var choice string
 		fmt.Scanln(&choice)
 		choice = strings.ToLower(strings.TrimSpace(choice))
@@ -171,7 +176,7 @@ func runSetup() error {
 	fmt.Println("This will configure your OpenRouter API key.")
 	fmt.Println()
 	if useEnvKey {
-		fmt.Printf("Using API key from %s. It will not be stored in config.\n", config.OpenRouterAPIKeyEnv)
+		fmt.Printf("Using API key from %s. It will not be stored in config.\n", envName)
 		logf("setup: openrouter use_env=true")
 	} else {
 		fmt.Print("Enter OpenRouter API key: ")
@@ -203,11 +208,11 @@ func printHelp() {
 	fmt.Println("  gitcomm [flags]")
 	fmt.Println()
 	fmt.Println("Flags:")
-	fmt.Println("  -setup   Run interactive setup to configure API keys")
-	fmt.Println("  -auto    Automatically commit with the generated message")
-	fmt.Println("  -ap      Automatically commit and push with the generated message")
+	fmt.Println("  -setup   Run interactive setup to configure OpenRouter API key and defaults")
 	fmt.Println("  -sa      Stage all changes before analyzing")
-	fmt.Println("  -debug   Enable verbose debug logging")
+	fmt.Println("  -auto    Generate a commit message and auto-commit with it")
+	fmt.Println("  -ap      Generate, auto-commit, and push to remote")
+	fmt.Println("  -debug   Enable verbose debug logging for troubleshooting")
 	fmt.Println()
 	fmt.Println("Common examples:")
 	fmt.Println("  gitcomm")

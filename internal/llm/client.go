@@ -57,7 +57,11 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 	apiKey := appConfig.OpenRouterAPIKey
 	if apiKey == "" {
-		return nil, fmt.Errorf("OpenRouter API key not set in config file or %s environment variable", config.OpenRouterAPIKeyEnv)
+		return nil, fmt.Errorf(
+			"OpenRouter API key not set in config file or %s/%s environment variables",
+			config.OpenRouterAPIKeyEnvPrimary,
+			config.OpenRouterAPIKeyEnvLegacy,
+		)
 	}
 
 	models := defaultModels

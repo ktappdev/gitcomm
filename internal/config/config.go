@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	OpenRouterAPIKeyEnv   = "OPEN_ROUTER_API_KEY"
-	OpenRouterAPIURL      = "https://openrouter.ai/api/v1/chat/completions"
-	DefaultMaxTokens      = 400
-	DefaultTemperature    = 0.7
-	DefaultTimeoutSeconds = 30
+	OpenRouterAPIKeyEnvPrimary = "OPENROUTER_API_KEY"
+	OpenRouterAPIKeyEnvLegacy  = "OPEN_ROUTER_API_KEY"
+	OpenRouterAPIURL           = "https://openrouter.ai/api/v1/chat/completions"
+	DefaultMaxTokens           = 400
+	DefaultTemperature         = 0.7
+	DefaultTimeoutSeconds      = 30
 )
 
 var DefaultModels = []string{
@@ -64,8 +65,10 @@ func LoadConfig() (*Config, error) {
 		json.Unmarshal(data, config)
 	}
 
-	// Environment variables override config file
-	if envKey := os.Getenv(OpenRouterAPIKeyEnv); envKey != "" {
+	// Environment variables override config file (primary then legacy)
+	if envKey := os.Getenv(OpenRouterAPIKeyEnvPrimary); envKey != "" {
+		config.OpenRouterAPIKey = envKey
+	} else if envKey := os.Getenv(OpenRouterAPIKeyEnvLegacy); envKey != "" {
 		config.OpenRouterAPIKey = envKey
 	}
 
