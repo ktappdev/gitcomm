@@ -16,9 +16,9 @@ const (
 )
 
 var DefaultModels = []string{
-	"meta-llama/llama-3.3-8b-instruct:free", // Primary: Free and capable
-	"meta-llama/llama-4-scout",              // Fallback 1: Strong performance
-	"google/gemini-2.5-flash-lite",          // Fallback 2: Fast and capable
+	"openai/gpt-oss-120b:free",     // Primary: Free and capable
+	"openai/gpt-oss-20b:free",      // Fallback 1: Strong performance
+	"google/gemini-2.5-flash-lite", // Fallback 2: Fast and capable
 }
 
 func Path() (string, error) {
