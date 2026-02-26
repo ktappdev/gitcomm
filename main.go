@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ktappdev/gitcomm/internal/analyzer"
@@ -25,6 +26,7 @@ func main() {
 	autoPushFlag := flag.Bool("ap", false, "Automatically commit and push with the generated message")
 	stageAllFlag := flag.Bool("sa", false, "Stage all changes before analyzing")
 	debugFlag := flag.Bool("debug", false, "Enable verbose debug logging")
+	setModelFlag := flag.String("set-model", "", "Set model at position (format: position:provider/model-name)")
 	flag.Parse()
 
 	debug = *debugFlag
@@ -38,6 +40,11 @@ func main() {
 			return
 		}
 		fmt.Println("Setup completed successfully!")
+		return
+	}
+
+	if *setModelFlag != "" {
+		handleSetModel(*setModelFlag)
 		return
 	}
 
@@ -202,17 +209,85 @@ func runSetup() error {
 	return nil
 }
 
+func handleSetModel(arg string) {
+	// Split on first colon only
+	parts := strings.SplitN(arg, ":", 2)
+	if len(parts) != 2 {
+		fmt.Println("❌ Error: Invalid format, expected position:model-name")
+		fmt.Println("Example: 1:openai/gpt-4o-mini")
+		fmt.Println("Example: 2:meta-llama/llama-3.3-8b-instruct:free")
+		return
+	}
+
+	// Parse position
+	positionStr := strings.TrimSpace(parts[0])
+	position, err := strconv.Atoi(positionStr)
+	if err != nil {
+		fmt.Printf("❌ Error: Invalid position '%s': must be an integer\n", positionStr)
+		return
+	}
+
+	// Validate model name
+	modelName := strings.TrimSpace(parts[1])
+	if modelName == "" {
+		fmt.Println("❌ Error: Model name cannot be empty")
+		return
+	}
+
+	// Use the new validation function
+	if err := config.ValidateModelName(modelName); err != nil {
+		fmt.Printf("❌ Error: Invalid model name: %v\n", err)
+		return
+	}
+
+	// Load config
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		fmt.Printf("❌ Error: Failed to load configuration: %v\n", err)
+		return
+	}
+
+	// Validate position
+	maxPosition := len(cfg.Models) + 1
+	if position < 1 || position > maxPosition {
+		fmt.Printf("❌ Error: Invalid position: %d\n", position)
+		fmt.Printf("Valid positions are 1 to %d\n", maxPosition)
+		return
+	}
+
+	// Update or append to models array
+	if position <= len(cfg.Models) {
+		cfg.Models[position-1] = modelName
+		fmt.Printf("Updated model at position %d (primary = 1) to: %s\n", position, modelName)
+	} else {
+		cfg.Models = append(cfg.Models, modelName)
+		fmt.Printf("Added new model at position %d: %s\n", position, modelName)
+	}
+
+	// Save config
+	if err := config.SaveConfig(cfg); err != nil {
+		fmt.Printf("❌ Error: Failed to save configuration: %v\n", err)
+		return
+	}
+
+	fmt.Println("✅ Configuration saved successfully!")
+}
+
 func printHelp() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  gitcomm [flags]")
 	fmt.Println()
 	fmt.Println("Flags:")
-	fmt.Println("  -setup   Run interactive setup to configure OpenRouter API key and defaults")
-	fmt.Println("  -sa      Stage all changes before analyzing")
-	fmt.Println("  -auto    Generate a commit message and auto-commit with it")
-	fmt.Println("  -ap      Generate, auto-commit, and push to remote")
-	fmt.Println("  -debug   Enable verbose debug logging for troubleshooting")
+	fmt.Println("  -setup      Run interactive setup to configure OpenRouter API key and defaults")
+	fmt.Println("  -sa         Stage all changes before analyzing")
+	fmt.Println("  -auto       Generate a commit message and auto-commit with it")
+	fmt.Println("  -ap         Generate, auto-commit, and push to remote")
+	fmt.Println("  -debug      Enable verbose debug logging for troubleshooting")
+	fmt.Println("  -set-model  Set model at position (format: position:provider/model-name)")
+	fmt.Println("               Position: 1 = primary, 2 = first fallback, etc.")
+	fmt.Println("               Example: 1:openai/gpt-4o-mini")
+	fmt.Println("               Example: 2:meta-llama/llama-3.3-8b-instruct:free")
 	fmt.Println()
 	fmt.Println("Common examples:")
 	fmt.Println("  gitcomm")

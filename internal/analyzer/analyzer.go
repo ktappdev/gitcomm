@@ -9,7 +9,7 @@ import (
 
 func AnalyzeChanges(diff string) (string, error) {
 	fmt.Println("🤖 Generating commit message...")
-	
+
 	client, err := llm.NewClient(llm.ClientConfig{
 		MaxTokens:   400, // Allow for detailed commit messages
 		Temperature: 0.7, // Keep same temperature
@@ -68,7 +68,7 @@ func extractCommitMessage(response string) string {
 		"**Generated Commit Message:**",
 		"## Generated Commit Message",
 	}
-	
+
 	for _, marker := range markers {
 		idx := strings.Index(response, marker)
 		if idx != -1 {
@@ -82,7 +82,7 @@ func extractCommitMessage(response string) string {
 			}
 		}
 	}
-	
+
 	// If no marker found, try to extract a reasonable commit message from the response
 	lines := strings.Split(strings.TrimSpace(response), "\n")
 	if len(lines) > 0 {
@@ -91,12 +91,12 @@ func extractCommitMessage(response string) string {
 			line = strings.TrimSpace(line)
 			if line != "" && !strings.HasPrefix(line, "#") && !strings.HasPrefix(line, "```") {
 				// If it looks like a reasonable commit message, return it
-			if len(line) > 10 && len(line) < 100 {
-				return line
-			}
+				if len(line) > 10 && len(line) < 100 {
+					return line
+				}
 			}
 		}
 	}
-	
+
 	return "update" // fallback if we can't parse anything useful
 }

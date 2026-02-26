@@ -20,13 +20,22 @@ func StageAll() error {
 }
 
 func GetStagedChanges() (string, error) {
-	cmd := exec.Command("git", "diff", "--staged")
-	output, err := cmd.Output()
+	cmd := exec.Command("git", "diff", "--cached")
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		errCmd := exec.Command("git", "diff", "--staged")
-		errOutput, _ := errCmd.CombinedOutput()
-		msg := strings.TrimSpace(string(errOutput))
+		msg := strings.TrimSpace(string(output))
 		if msg != "" {
+			lines := strings.Split(msg, "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "" {
+					continue
+				}
+				if strings.HasPrefix(line, "fatal:") || strings.HasPrefix(line, "error:") {
+					msg = line
+					break
+				}
+			}
 			return "", fmt.Errorf("%s", msg)
 		}
 		return "", err

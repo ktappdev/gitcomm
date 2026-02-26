@@ -168,7 +168,12 @@ func (c *Client) tryModel(model, prompt string) (string, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("API request failed with status: %d, response: %s", resp.StatusCode, string(body))
+		// Sanitize error message to avoid exposing sensitive information
+		errorMsg := string(body)
+		if len(errorMsg) > 200 {
+			errorMsg = errorMsg[:200] + "... (truncated)"
+		}
+		return "", fmt.Errorf("API request failed with status: %d, response: %s", resp.StatusCode, errorMsg)
 	}
 
 	body, err := io.ReadAll(resp.Body)

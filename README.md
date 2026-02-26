@@ -105,6 +105,18 @@ gitcomm -sa -auto
 
 # Stage all changes, generate message, auto-commit, and push
 gitcomm -sa -ap
+
+# Customize the primary model to use GPT-4o Mini
+gitcomm -set-model "1:openai/gpt-4o-mini"
+
+# Change the first fallback model to a free Llama model
+gitcomm -set-model "2:meta-llama/llama-3.3-8b-instruct:free"
+
+# Add Claude 3.5 Sonnet as an additional fallback option
+gitcomm -set-model "4:anthropic/claude-3.5-sonnet"
+
+# Use custom model and then generate a commit message
+gitcomm -set-model "1:openai/gpt-4o-mini" && gitcomm -sa -auto
 ```
 
 ## Configuration
@@ -141,7 +153,7 @@ GitComm uses the following defaults:
 - Timeout: 30 seconds per model attempt
 - Commit Format: Subject line (50-72 chars) + blank line + detailed body
 
-The first two models in this list are chosen because they are typically available on OpenRouter's free tier; the third is a stronger fallback that may require paid credits. If OpenRouter's free offerings change, you can edit the `models` array in `~/.gitcomm/config.json` to point to other free models.
+The first two models in this list are chosen because they are typically available on OpenRouter's free tier; the third is a stronger fallback that may require paid credits. If OpenRouter's free offerings change, you can edit the `models` array in `~/.gitcomm/config.json` to point to other free models, or use the `-set-model` flag to update models from the command line.
 
 ### Model Fallback System
 
@@ -152,6 +164,59 @@ GitComm automatically tries multiple models if one fails:
 3. **Fallback 2**: `google/gemini-2.5-flash-lite` - Fast and capable final option
 
 Commit messages follow proper Git format with a concise subject line and detailed body explaining the changes. If all models fail, you'll see an error message.
+
+### Customizing Models
+
+You can customize the models used by GitComm using the `-set-model` flag. This allows you to:
+
+1. Replace existing models in the fallback chain
+2. Add new models to the end of the chain
+3. Use different models from OpenRouter's catalog
+
+**Usage:**
+```bash
+gitcomm -set-model "position:provider/model-name"
+```
+
+**Position numbers:**
+- `1` = Primary model (first tried)
+- `2` = First fallback model (tried if primary fails)
+- `3` = Second fallback model (tried if first fallback fails)
+- `4+` = Additional fallback models (appended to the end)
+
+**Examples:**
+```bash
+# Change the primary model to GPT-4o Mini
+gitcomm -set-model "1:openai/gpt-4o-mini"
+
+# Change the first fallback model to Llama 3.3 8B Instruct (free tier)
+gitcomm -set-model "2:meta-llama/llama-3.3-8b-instruct:free"
+
+# Add a new model as the fourth fallback option
+gitcomm -set-model "4:anthropic/claude-3.5-sonnet"
+
+# View current configuration
+cat ~/.gitcomm/config.json
+```
+
+**Model name format:**
+- Use the full model identifier from OpenRouter
+- Format: `provider/model-name` (e.g., `openai/gpt-4o-mini`)
+- Must contain a `/` character to separate provider from model name
+- Some models include qualifiers like `:free` for free tier models
+- Check [OpenRouter's model list](https://openrouter.ai/models) for available models
+
+**Note:** When you set a model at a position beyond the current list length, it will be appended as a new fallback option. For example, if you have 3 models and set position 5, the new model will be added as the 4th model (positions 1-3 remain unchanged, position 4 becomes the new model).
+
+**Important:** The `-set-model` flag is mutually exclusive with other GitComm operations. When you use `-set-model`, GitComm will only update the configuration and exit; it will not generate commit messages, stage changes, or perform any other operations. To use a custom model and then generate a commit message, you need to run two separate commands:
+
+```bash
+# First, update the model configuration
+gitcomm -set-model "1:openai/gpt-4o-mini"
+
+# Then, use GitComm normally with the new model
+gitcomm -sa -auto
+```
 
 ### Example Output
 
@@ -223,6 +288,7 @@ email addresses with subdomain patterns.
 - `-auto`: Automatically commit with the generated message
 - `-ap`: Automatically commit and push to remote
 - `-sa`: Stage all changes before analyzing (equivalent to `git add .`)
+- `-set-model`: Set model at position (format: position:provider/model-name)
 
 ## Contributing
 
