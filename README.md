@@ -22,6 +22,14 @@ GitComm is also designed to stay CLI-friendly when providers misbehave: model fa
 go install github.com/ktappdev/gitcomm@latest
 ```
 
+If you installed GitComm this way, you can later update it with:
+
+```bash
+gitcomm update
+```
+
+`gitcomm update` runs `go install github.com/ktappdev/gitcomm@latest` for convenience. It only works for copies installed via `go install`, requires `go` to be available on your PATH, and does not update binaries installed via release downloads or other package managers.
+
 ### From Releases
 
 Download the appropriate binary for your system from the [releases page](https://github.com/ktappdev/gitcomm/releases).
@@ -93,6 +101,12 @@ gitcomm -auto
 gitcomm -ap
 ```
 
+5. Update a Go-installed GitComm binary (requires `go` on your PATH):
+
+```bash
+gitcomm update
+```
+
 ## Examples
 
 ```bash
@@ -116,6 +130,9 @@ gitcomm -set-model "2:meta-llama/llama-3.3-8b-instruct:free"
 
 # Add Claude 3.5 Sonnet as an additional fallback option
 gitcomm -set-model "4:anthropic/claude-3.5-sonnet"
+
+# Update GitComm if you installed it with `go install` and still have `go` on your PATH
+gitcomm update
 ```
 
 ## Configuration

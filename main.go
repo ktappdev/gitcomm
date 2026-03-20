@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -13,7 +15,12 @@ import (
 	"github.com/ktappdev/gitcomm/internal/git"
 )
 
-var debug = false
+const updateModule = "github.com/ktappdev/gitcomm@latest"
+
+var (
+	debug       = false
+	execCommand = exec.Command
+)
 
 func logf(format string, args ...any) {
 	if debug {
@@ -37,6 +44,27 @@ func main() {
 		fmt.Printf("warning: failed to initialize diagnostics logging: %v\n", err)
 	}
 	logf("startup: flags setup=%v auto=%v ap=%v sa=%v debug=%v", *setupFlag, *autoFlag, *autoPushFlag, *stageAllFlag, *debugFlag)
+
+	if flag.NArg() > 0 {
+		switch flag.Arg(0) {
+		case "update":
+			if err := runSelfUpdate(); err != nil {
+				diag.Error("main", "self-update failed", "error", err)
+				fmt.Printf("❌ Update failed: %v\n", err)
+				if diag.Path() != "" {
+					fmt.Printf("   Diagnostics log: %s\n", diag.Path())
+				}
+				return
+			}
+			fmt.Println("✅ GitComm updated successfully.")
+			fmt.Println("   This updates Go-installed copies of GitComm.")
+			return
+		default:
+			fmt.Printf("❌ Unknown command: %s\n", flag.Arg(0))
+			printHelp()
+			return
+		}
+	}
 
 	if *setupFlag {
 		logf("runSetup: starting interactive setup")
@@ -139,6 +167,36 @@ func main() {
 			fmt.Println("✅ Changes pushed successfully!")
 		}
 	}
+}
+
+func runSelfUpdate() error {
+	fmt.Println("⬆️  Updating GitComm via Go...")
+	fmt.Printf("   Running: go install %s\n", updateModule)
+
+	cmd := execCommand("go", "install", updateModule)
+	output, err := cmd.CombinedOutput()
+	outputText := strings.TrimSpace(string(output))
+	if err != nil {
+		if errorsIsExecNotFound(err) {
+			return fmt.Errorf("Go is not installed or not on PATH; install Go to use `gitcomm update`")
+		}
+		if outputText != "" {
+			return fmt.Errorf("go install failed: %s", outputText)
+		}
+		return fmt.Errorf("go install failed: %w", err)
+	}
+	if outputText != "" {
+		diag.Info("main", "self-update command output", "output", diag.Snippet(outputText, 300))
+	}
+	return nil
+}
+
+func errorsIsExecNotFound(err error) bool {
+	var execErr *exec.Error
+	if errors.As(err, &execErr) && execErr.Err == exec.ErrNotFound {
+		return true
+	}
+	return errors.Is(err, exec.ErrNotFound) || errors.Is(err, os.ErrNotExist)
 }
 
 func runSetup() error {
@@ -279,6 +337,7 @@ func printHelp() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  gitcomm [flags]")
+	fmt.Println("  gitcomm update")
 	fmt.Println()
 	fmt.Println("Flags:")
 	fmt.Println("  -setup      Run interactive setup to configure OpenRouter API key and defaults")
@@ -291,9 +350,14 @@ func printHelp() {
 	fmt.Println("               Example: 1:openai/gpt-4o-mini")
 	fmt.Println("               Example: 2:meta-llama/llama-3.3-8b-instruct:free")
 	fmt.Println()
+	fmt.Println("Commands:")
+	fmt.Println("  update      Install the latest GitComm with `go install github.com/ktappdev/gitcomm@latest`")
+	fmt.Println("              Only works for Go-installed copies of GitComm and requires `go` on PATH")
+	fmt.Println()
 	fmt.Println("Common examples:")
 	fmt.Println("  gitcomm")
 	fmt.Println("  gitcomm -sa")
 	fmt.Println("  gitcomm -sa -auto")
 	fmt.Println("  gitcomm -sa -ap")
+	fmt.Println("  gitcomm update")
 }
