@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "gitcomm",
+  "project_id": "ef7bc2a7-25fa-4bb6-857f-69d7764f1b27"
+}

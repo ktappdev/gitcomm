@@ -1,2 +1,7 @@
 gitcomm
 .crush
+.pi/agent-sessions/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
