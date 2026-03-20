@@ -9,6 +9,7 @@ import (
 
 	"github.com/ktappdev/gitcomm/internal/analyzer"
 	"github.com/ktappdev/gitcomm/internal/config"
+	"github.com/ktappdev/gitcomm/internal/diag"
 	"github.com/ktappdev/gitcomm/internal/git"
 )
 
@@ -30,11 +31,17 @@ func main() {
 	flag.Parse()
 
 	debug = *debugFlag
+	if path, err := diag.Init(debug); err == nil {
+		diag.Info("main", "startup", "args", strings.Join(os.Args[1:], " "), "log_path", path)
+	} else if debug {
+		fmt.Printf("warning: failed to initialize diagnostics logging: %v\n", err)
+	}
 	logf("startup: flags setup=%v auto=%v ap=%v sa=%v debug=%v", *setupFlag, *autoFlag, *autoPushFlag, *stageAllFlag, *debugFlag)
 
 	if *setupFlag {
 		logf("runSetup: starting interactive setup")
 		if err := runSetup(); err != nil {
+			diag.Error("main", "setup failed", "error", err)
 			fmt.Println("Setup failed:", err)
 			printHelp()
 			return
@@ -67,6 +74,7 @@ func main() {
 	logf("git.GetStagedChanges: fetching staged diff")
 	diff, err := git.GetStagedChanges()
 	if err != nil {
+		diag.Error("main", "failed to get staged changes", "error", err)
 		if strings.Contains(err.Error(), "not a git repository") {
 			fmt.Println("❌ This directory is not a Git repository.")
 			fmt.Println("   Run `git init` to create one, or run gitcomm inside an existing repo.")
@@ -79,6 +87,7 @@ func main() {
 	logf("git.GetStagedChanges: got %d bytes", len(diff))
 
 	if diff == "" {
+		diag.Warn("main", "no staged changes found")
 		fmt.Println("⚠️  No staged changes. Please stage your changes before running gitcomm.")
 		printHelp()
 		return
@@ -87,7 +96,11 @@ func main() {
 	logf("analyzer.AnalyzeChanges: begin")
 	commitMessage, err := analyzer.AnalyzeChanges(diff)
 	if err != nil {
+		diag.Error("main", "analysis failed", "error", err)
 		fmt.Printf("❌ Error analyzing changes: %v\n", err)
+		if diag.Path() != "" {
+			fmt.Printf("   Diagnostics log: %s\n", diag.Path())
+		}
 		printHelp()
 		return
 	}
@@ -153,7 +166,6 @@ func runSetup() error {
 			}
 			fmt.Printf("Backed up existing config to %s\n", backupPath)
 		case "y":
-			// continue to overwrite
 		default:
 			fmt.Println("Unrecognized choice. Keeping existing config. Setup cancelled.")
 			return nil
@@ -161,7 +173,6 @@ func runSetup() error {
 	}
 
 	cfg := config.DefaultConfig()
-
 	envKey := os.Getenv(config.OpenRouterAPIKeyEnvPrimary)
 	envName := config.OpenRouterAPIKeyEnvPrimary
 	if envKey == "" {
@@ -189,7 +200,6 @@ func runSetup() error {
 		fmt.Print("Enter OpenRouter API key: ")
 		fmt.Scanln(&cfg.OpenRouterAPIKey)
 		logf("setup: openrouter set=%v", cfg.OpenRouterAPIKey != "")
-
 		if cfg.OpenRouterAPIKey == "" {
 			return fmt.Errorf("OpenRouter API key is required")
 		}
@@ -205,12 +215,10 @@ func runSetup() error {
 		return err
 	}
 	fmt.Printf("Config file location: %s/.gitcomm/config.json\n", hd)
-
 	return nil
 }
 
 func handleSetModel(arg string) {
-	// Split on first colon only
 	parts := strings.SplitN(arg, ":", 2)
 	if len(parts) != 2 {
 		fmt.Println("❌ Error: Invalid format, expected position:model-name")
@@ -219,7 +227,6 @@ func handleSetModel(arg string) {
 		return
 	}
 
-	// Parse position
 	positionStr := strings.TrimSpace(parts[0])
 	position, err := strconv.Atoi(positionStr)
 	if err != nil {
@@ -227,27 +234,25 @@ func handleSetModel(arg string) {
 		return
 	}
 
-	// Validate model name
 	modelName := strings.TrimSpace(parts[1])
 	if modelName == "" {
 		fmt.Println("❌ Error: Model name cannot be empty")
 		return
 	}
-
-	// Use the new validation function
 	if err := config.ValidateModelName(modelName); err != nil {
 		fmt.Printf("❌ Error: Invalid model name: %v\n", err)
 		return
 	}
 
-	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		fmt.Printf("❌ Error: Failed to load configuration: %v\n", err)
+		if diag.Path() != "" {
+			fmt.Printf("   Diagnostics log: %s\n", diag.Path())
+		}
 		return
 	}
 
-	// Validate position
 	maxPosition := len(cfg.Models) + 1
 	if position < 1 || position > maxPosition {
 		fmt.Printf("❌ Error: Invalid position: %d\n", position)
@@ -255,7 +260,6 @@ func handleSetModel(arg string) {
 		return
 	}
 
-	// Update or append to models array
 	if position <= len(cfg.Models) {
 		cfg.Models[position-1] = modelName
 		fmt.Printf("Updated model at position %d (primary = 1) to: %s\n", position, modelName)
@@ -264,12 +268,10 @@ func handleSetModel(arg string) {
 		fmt.Printf("Added new model at position %d: %s\n", position, modelName)
 	}
 
-	// Save config
 	if err := config.SaveConfig(cfg); err != nil {
 		fmt.Printf("❌ Error: Failed to save configuration: %v\n", err)
 		return
 	}
-
 	fmt.Println("✅ Configuration saved successfully!")
 }
 
@@ -283,7 +285,7 @@ func printHelp() {
 	fmt.Println("  -sa         Stage all changes before analyzing")
 	fmt.Println("  -auto       Generate a commit message and auto-commit with it")
 	fmt.Println("  -ap         Generate, auto-commit, and push to remote")
-	fmt.Println("  -debug      Enable verbose debug logging for troubleshooting")
+	fmt.Println("  -debug      Enable verbose debug logging")
 	fmt.Println("  -set-model  Set model at position (format: position:provider/model-name)")
 	fmt.Println("               Position: 1 = primary, 2 = first fallback, etc.")
 	fmt.Println("               Example: 1:openai/gpt-4o-mini")

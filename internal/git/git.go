@@ -4,13 +4,18 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/ktappdev/gitcomm/internal/diag"
 )
+
+const MaxDiffLines = 1500
 
 func StageAll() error {
 	cmd := exec.Command("git", "add", ".")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		msg := strings.TrimSpace(string(output))
+		diag.Error("git", "git add failed", "error", err, "output", diag.Snippet(msg, 300))
 		if msg != "" {
 			return fmt.Errorf("%s", msg)
 		}
@@ -36,20 +41,26 @@ func GetStagedChanges() (string, error) {
 					break
 				}
 			}
+			diag.Error("git", "git diff --cached failed", "error", err, "output", diag.Snippet(msg, 300))
 			return "", fmt.Errorf("%s", msg)
 		}
 		return "", err
 	}
-	res, wasTruncated := limitDiffSizeWithInfo(string(output), 1500)
 
-	// Show useful diff information
-	originalLines := len(strings.Split(string(output), "\n"))
+	res, wasTruncated := limitDiffSizeWithInfo(string(output), MaxDiffLines)
+	originalLines := countLines(string(output))
+	returnedLines := countLines(res)
+	fmt.Printf("📄 Analyzed %d lines of diff", minInt(originalLines, MaxDiffLines))
 	if wasTruncated {
-		fmt.Printf("📄 Analyzed %d lines of diff (truncated from %d lines)\n", 1500, originalLines)
-	} else {
-		fmt.Printf("📄 Analyzed %d lines of diff\n", originalLines)
+		fmt.Printf(" (truncated from %d lines)", originalLines)
 	}
+	fmt.Println()
 
+	if strings.TrimSpace(res) == "" {
+		diag.Warn("git", "staged diff is empty", "bytes", len(output), "lines", originalLines)
+	} else {
+		diag.Info("git", "collected staged diff", "bytes", len(output), "lines", originalLines, "returned_lines", returnedLines, "truncated", wasTruncated)
+	}
 	return res, nil
 }
 
@@ -58,7 +69,7 @@ func limitDiffSizeWithInfo(diff string, maxLines int) (string, bool) {
 		return diff, false
 	}
 
-	lines := strings.Split(diff, "\n")
+	lines := splitDiffLines(diff)
 	if len(lines) <= maxLines {
 		return diff, false
 	}
@@ -67,7 +78,6 @@ func limitDiffSizeWithInfo(diff string, maxLines int) (string, bool) {
 	return truncated, true
 }
 
-// Keep old function for backward compatibility
 func limitDiffSize(diff string, maxLines int) string {
 	result, _ := limitDiffSizeWithInfo(diff, maxLines)
 	return result
@@ -81,4 +91,26 @@ func Commit(message string) error {
 func Push() error {
 	cmd := exec.Command("git", "push")
 	return cmd.Run()
+}
+
+func countLines(s string) int {
+	return len(splitDiffLines(s))
+}
+
+func splitDiffLines(s string) []string {
+	if s == "" {
+		return nil
+	}
+	trimmed := strings.TrimSuffix(s, "\n")
+	if trimmed == "" {
+		return nil
+	}
+	return strings.Split(trimmed, "\n")
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
