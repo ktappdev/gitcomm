@@ -132,6 +132,7 @@ func (c *Client) tryModel(model, prompt string, attempt, total int) (string, err
 		"messages":    []map[string]string{{"role": "user", "content": prompt}},
 		"max_tokens":  c.maxTokens,
 		"temperature": c.temperature,
+		"reasoning":   map[string]any{"max_tokens": 0},
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal request body: %w", err)

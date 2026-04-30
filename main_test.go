@@ -69,3 +69,16 @@ func TestErrorsIsExecNotFound(t *testing.T) {
 		t.Fatal("did not expect generic error to match")
 	}
 }
+
+func TestHelpTextIncludesUpdateCommand(t *testing.T) {
+	help := helpText()
+	for _, want := range []string{
+		"gitcomm update",
+		"go install github.com/ktappdev/gitcomm@latest",
+		"Only works for Go-installed copies of GitComm and requires `go` on PATH",
+	} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("help text missing %q\n%s", want, help)
+		}
+	}
+}

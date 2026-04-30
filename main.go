@@ -29,6 +29,7 @@ func logf(format string, args ...any) {
 }
 
 func main() {
+	flag.Usage = printHelp
 	setupFlag := flag.Bool("setup", false, "Run interactive setup to configure API keys")
 	autoFlag := flag.Bool("auto", false, "Automatically commit with the generated message")
 	autoPushFlag := flag.Bool("ap", false, "Automatically commit and push with the generated message")
@@ -333,31 +334,33 @@ func handleSetModel(arg string) {
 	fmt.Println("✅ Configuration saved successfully!")
 }
 
+func helpText() string {
+	return strings.TrimSpace("\n" +
+		"Usage:\n" +
+		"  gitcomm [flags]\n" +
+		"  gitcomm update\n\n" +
+		"Flags:\n" +
+		"  -setup      Run interactive setup to configure OpenRouter API key and defaults\n" +
+		"  -sa         Stage all changes before analyzing\n" +
+		"  -auto       Generate a commit message and auto-commit with it\n" +
+		"  -ap         Generate, auto-commit, and push to remote\n" +
+		"  -debug      Enable verbose debug logging\n" +
+		"  -set-model  Set model at position (format: position:provider/model-name)\n" +
+		"               Position: 1 = primary, 2 = first fallback, etc.\n" +
+		"               Example: 1:openai/gpt-4o-mini\n" +
+		"               Example: 2:meta-llama/llama-3.3-8b-instruct:free\n\n" +
+		"Commands:\n" +
+		"  update      Install the latest GitComm with `go install github.com/ktappdev/gitcomm@latest`\n" +
+		"              Only works for Go-installed copies of GitComm and requires `go` on PATH\n\n" +
+		"Common examples:\n" +
+		"  gitcomm\n" +
+		"  gitcomm -sa\n" +
+		"  gitcomm -sa -auto\n" +
+		"  gitcomm -sa -ap\n" +
+		"  gitcomm update\n")
+}
+
 func printHelp() {
 	fmt.Println()
-	fmt.Println("Usage:")
-	fmt.Println("  gitcomm [flags]")
-	fmt.Println("  gitcomm update")
-	fmt.Println()
-	fmt.Println("Flags:")
-	fmt.Println("  -setup      Run interactive setup to configure OpenRouter API key and defaults")
-	fmt.Println("  -sa         Stage all changes before analyzing")
-	fmt.Println("  -auto       Generate a commit message and auto-commit with it")
-	fmt.Println("  -ap         Generate, auto-commit, and push to remote")
-	fmt.Println("  -debug      Enable verbose debug logging")
-	fmt.Println("  -set-model  Set model at position (format: position:provider/model-name)")
-	fmt.Println("               Position: 1 = primary, 2 = first fallback, etc.")
-	fmt.Println("               Example: 1:openai/gpt-4o-mini")
-	fmt.Println("               Example: 2:meta-llama/llama-3.3-8b-instruct:free")
-	fmt.Println()
-	fmt.Println("Commands:")
-	fmt.Println("  update      Install the latest GitComm with `go install github.com/ktappdev/gitcomm@latest`")
-	fmt.Println("              Only works for Go-installed copies of GitComm and requires `go` on PATH")
-	fmt.Println()
-	fmt.Println("Common examples:")
-	fmt.Println("  gitcomm")
-	fmt.Println("  gitcomm -sa")
-	fmt.Println("  gitcomm -sa -auto")
-	fmt.Println("  gitcomm -sa -ap")
-	fmt.Println("  gitcomm update")
+	fmt.Println(helpText())
 }
