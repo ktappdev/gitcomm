@@ -23,8 +23,8 @@ const (
 
 var (
 	DefaultModels = []string{
-		"meta-llama/llama-3.3-8b-instruct:free",
-		"meta-llama/llama-4-scout",
+		"openrouter/free",
+		"openrouter/free",
 		"google/gemini-2.5-flash-lite",
 	}
 
